@@ -28,7 +28,7 @@
 <script>
 import {mapState} from "vuex";
 import OffersTable from "@/components/OffersTable";
-import _ from 'underscore'
+import _ from 'lodash'
 
 export default {
   name: 'Offers',
@@ -126,13 +126,19 @@ export default {
       })
     },
     favorites: function () {
-      return _.where(this.offers, {favorite: true});
+      return _.filter(this.offers, function (o) {
+        return o.favorite
+      });
     },
     archived: function () {
-      return _.where(this.offers, {archived: true});
+      return _.filter(this.offers, function (o) {
+        return o.archived
+      });
     },
     untagged: function () {
-      return _.where(this.offers, {favorite: false, archived: false});
+      return _.filter(this.offers, function (o) {
+        return !(o.favorite && o.archived)
+      });
     }
   },
   methods: {

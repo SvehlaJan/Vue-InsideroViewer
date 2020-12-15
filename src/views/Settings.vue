@@ -73,12 +73,11 @@
 <script>
 import {mapState} from 'vuex'
 import VueTypeaheadBootstrap from 'vue-typeahead-bootstrap'
-import _ from 'underscore'
+import _ from 'lodash'
 
 export default {
   data() {
     return {
-      newApiKey: '',
       isLoading: false,
       showSuccess: false,
       newLocationState: {},
@@ -116,7 +115,6 @@ export default {
     ...mapState(['userProfile']),
   },
   watch: {
-    newApiKey: {},
     'cityForm.searchQuery': function (newVal, oldVal) {
       this.getCitiesDebounced(this.countryForm.selectedItem, this.regionForm.selectedItem, this.cityForm.searchQuery)
     },
@@ -131,13 +129,11 @@ export default {
   methods: {
     updateProfile() {
       this.$store.dispatch('updateProfile', {
-        newApiKey: this.newApiKey !== '' ? this.newApiKey : this.userProfile.apiKey,
-        userLocations: this.userProfile.userLocations,
-        offersHistory: this.userProfile.offersHistory,
+        apiKey: this.userProfile.apiKey || "",
+        userLocations: this.userProfile.userLocations || [],
+        offersHistory: this.userProfile.offersHistory || [],
       })
 
-      this.newApiKey = ''
-      // this.userLocations = []
       this.showSuccess = true
 
       setTimeout(() => {
@@ -161,8 +157,8 @@ export default {
         return
       }
 
-      const selectedCountry = _.where(this.countryForm.items, {value: this.countryForm.selectedItem})[0]
-      const selectedRegion = _.where(this.regionForm.items, {value: this.regionForm.selectedItem})[0]
+      const selectedCountry = _.find(this.countryForm.items, {value: this.countryForm.selectedItem})
+      const selectedRegion = _.find(this.regionForm.items, {value: this.regionForm.selectedItem})
       this.userProfile.userLocations.push(
           {
             country: selectedCountry,

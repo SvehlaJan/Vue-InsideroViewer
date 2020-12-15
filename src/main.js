@@ -8,7 +8,8 @@ import {BootstrapVue, BootstrapVueIcons} from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import axios from "axios";
-import AsyncComputed from 'vue-async-computed'
+import VueLodash from 'vue-lodash'
+import lodash from 'lodash'
 
 Vue.use(BootstrapVue);
 Vue.use(BootstrapVueIcons)
@@ -19,15 +20,15 @@ Vue.use(VueGoogleMaps, {
     },
 })
 
-Vue.config.productionTip = false
-
 const axiosConfig = {
     baseURL: ' https://api.insidero.com/v3',
     timeout: 30000,
 };
 Vue.prototype.$axios = axios.create(axiosConfig)
 
-Vue.use(AsyncComputed)
+Vue.use(VueLodash, {lodash: lodash})
+
+Vue.config.productionTip = false
 
 let app
 auth.onAuthStateChanged(user => {

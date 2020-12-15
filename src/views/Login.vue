@@ -56,15 +56,6 @@
             </b-form-input>
           </b-form-group>
 
-          <b-form-group id="input-group-5" label="Insidero API Key:" label-for="apiKey1">
-            <b-form-input
-                id="apiKey1"
-                v-model="signupForm.apiKey"
-                type="password"
-                required
-                placeholder="******">
-            </b-form-input>
-          </b-form-group>
           <b-button type="submit" variant="primary">Submit</b-button>
           <b-button @click="toggleForm()" variant="success">Back to Log In</b-button>
         </b-form>
@@ -89,7 +80,6 @@ export default {
       signupForm: {
         email: '',
         password: '',
-        apiKey: '',
       },
       showLoginForm: true,
       showPasswordReset: false,
@@ -113,7 +103,6 @@ export default {
       this.$store.dispatch('signup', {
         email: this.signupForm.email,
         password: this.signupForm.password,
-        apiKey: this.signupForm.apiKey
       })
     }
   }

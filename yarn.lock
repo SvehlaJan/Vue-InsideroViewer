@@ -8694,11 +8694,6 @@
     "commander" "~2.19.0"
     "source-map" "~0.6.1"
 
-"underscore@^1.12.0":
-  "integrity" "sha512-21rQzss/XPMjolTiIezSu3JAjgagXKROtNrYFEOWK109qY1Uv2tVjPTZ1ci2HgvQDA16gHYSthQIJfB+XId/rQ=="
-  "resolved" "https://registry.npmjs.org/underscore/-/underscore-1.12.0.tgz"
-  "version" "1.12.0"
-
 "unicode-canonical-property-names-ecmascript@^1.0.4":
   "integrity" "sha1-JhmADEyCWADv3YNDr33Zkzy+KBg="
   "resolved" "https://registry.npm.taobao.org/unicode-canonical-property-names-ecmascript/download/unicode-canonical-property-names-ecmascript-1.0.4.tgz"
@@ -8920,19 +8915,6 @@
   "resolved" "https://registry.npm.taobao.org/vm-browserify/download/vm-browserify-1.1.2.tgz"
   "version" "1.1.2"
 
-"vue-async-computed@^3.9.0":
-  "integrity" "sha512-ac6m/9zxHHNGGKNOU1en8qNk+fAmEbJLuWL7qyQTFuH3vjv3V4urv//QHcVzCobROM6btnaDG2b+XYMncF/ETA=="
-  "resolved" "https://registry.npmjs.org/vue-async-computed/-/vue-async-computed-3.9.0.tgz"
-  "version" "3.9.0"
-
-"vue-bootstrap-typeahead@^0.2.6":
-  "integrity" "sha512-BcUAnvfN+PS0StL6E3endd37P7HUt9otk+8m7tsa2gkt2I2KY8O2Dma49oR8ie8iletvJAlAqpN+klF6ktPULQ=="
-  "resolved" "https://registry.npmjs.org/vue-bootstrap-typeahead/-/vue-bootstrap-typeahead-0.2.6.tgz"
-  "version" "0.2.6"
-  dependencies:
-    "resize-observer-polyfill" "^1.5.0"
-    "vue" "^2.5.17"
-
 "vue-eslint-parser@^7.0.0":
   "integrity" "sha1-xDwccV/1B3i5p+mk4WkhGF80JdM="
   "resolved" "https://registry.npm.taobao.org/vue-eslint-parser/download/vue-eslint-parser-7.1.1.tgz?cache=0&sync_timestamp=1602499032728&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fvue-eslint-parser%2Fdownload%2Fvue-eslint-parser-7.1.1.tgz"
@@ -8975,6 +8957,11 @@
     "vue-hot-reload-api" "^2.3.0"
     "vue-style-loader" "^4.1.0"
 
+"vue-lodash@^2.1.2":
+  "integrity" "sha512-6QsNC7/XjrK4xKxFhh6Ppvcrfm0uAeR/lFsySsMgfEFUWkvRztcAIS3MsqAI4bBnAaLo9ou+8tUfJ8d+yrljQg=="
+  "resolved" "https://registry.npmjs.org/vue-lodash/-/vue-lodash-2.1.2.tgz"
+  "version" "2.1.2"
+
 "vue-router@^3.4.9":
   "integrity" "sha512-CGAKWN44RqXW06oC+u4mPgHLQQi2t6vLD/JbGRDAXm0YpMv0bgpKuU5bBd7AvMgfTz9kXVRIWKHqRwGEb8xFkA=="
   "resolved" "https://registry.npmjs.org/vue-router/-/vue-router-3.4.9.tgz"
@@ -9010,7 +8997,7 @@
     "resize-observer-polyfill" "^1.5.0"
     "vue" "^2.5.17"
 
-"vue@^2 || ^3.0.0-0", "vue@^2.0.0", "vue@^2.5.17", "vue@^2.5.18", "vue@^2.6.11", "vue@~2":
+"vue@^2 || ^3.0.0-0", "vue@^2.0.0", "vue@^2.5.17", "vue@^2.5.18", "vue@^2.6.11", "vue@>= 2.0.0":
   "integrity" "sha1-9evU+mvShpQD4pqJau1JBEVskSM="
   "resolved" "https://registry.npm.taobao.org/vue/download/vue-2.6.12.tgz?cache=0&sync_timestamp=1603223843200&other_urls=https%3A%2F%2Fregistry.npm.taobao.org%2Fvue%2Fdownload%2Fvue-2.6.12.tgz"
   "version" "2.6.12"
