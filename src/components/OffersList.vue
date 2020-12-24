@@ -55,7 +55,7 @@ export default {
     ...mapState(['userProfile']),
 
     offers: function () {
-      if (!this.userProfile.offersHistory || this.items.length === 0) {
+      if (this.userProfile?.offersHistory == null || this.items.length === 0) {
         return []
       }
 
@@ -137,7 +137,7 @@ export default {
     },
     untagged: function () {
       return _.filter(this.offers, function (o) {
-        return !(o.favorite && o.archived)
+        return (!o.favorite && !o.archived)
       });
     }
   },

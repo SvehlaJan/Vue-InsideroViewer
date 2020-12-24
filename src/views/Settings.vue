@@ -1,72 +1,78 @@
 <template>
   <b-container>
-    <section id="settings">
-      <h3>Settings</h3>
+    <h3 class="mt-4">Settings</h3>
 
-      <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>
+    <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>
 
-      <b-modal id="modal-location" size="lg" @ok="handleOk" title="BootstrapVue">
-        <form ref="form" @submit.stop.prevent="handleAddNewLocation">
-          <b-form-select v-model="countryForm.selectedItem"
-                         :options="countryForm.items"
-                         v-on:change="getRegions($event)"
-                         class="mb-3">
-            <template #first>
-              <b-form-select-option :value="''" disabled>-- Please select a country --</b-form-select-option>
+    <b-modal id="modal-location" size="lg" @ok="handleOk" title="BootstrapVue">
+      <form ref="form" @submit.stop.prevent="handleAddNewLocation">
+        <b-form-select v-model="countryForm.selectedItem"
+                       :options="countryForm.items"
+                       v-on:change="getRegions($event)"
+                       class="mb-3">
+          <template #first>
+            <b-form-select-option :value="''" disabled>-- Please select a country --</b-form-select-option>
+          </template>
+        </b-form-select>
+
+        <b-form-select v-model="regionForm.selectedItem"
+                       :options="regionForm.items"
+                       :disabled="countryForm.selectedItem === '' || regionForm.items.length === 0"
+                       class="mb-3">
+          <template #first>
+            <b-form-select-option :value="''" disabled>-- Please select a region --</b-form-select-option>
+          </template>
+        </b-form-select>
+
+        <vue-typeahead-bootstrap
+            :data="cityForm.items"
+            v-model="cityForm.searchQuery"
+            size="lg"
+            :serializer="s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')"
+            placeholder="Type a city name..."
+            :disabled="regionForm.selectedItem === ''"
+            @hit="cityForm.selectedItem = $event"/>
+      </form>
+    </b-modal>
+
+    <b-form @submit.prevent="updateProfile()" class="mt-4">
+      <b-card-group deck>
+        <b-card title="Profile">
+          <b-form-group id="input-group-1" label="Insidero API Key" label-for="input-1">
+            <b-form-input
+                id="input-1"
+                v-model="userProfile.apiKey"
+                required>
+            </b-form-input>
+            <div>
+              <p>You can get one from
+                <b-link target="_blank" rel="noopener noreferrer" href="https://www.insidero.com/registrace">Insidero
+                </b-link>
+              </p>
+            </div>
+          </b-form-group>
+        </b-card>
+
+        <b-card title="Locations">
+          <b-table :items="userProfile.userLocations || []" :fields="['country', 'region', 'city', 'delete']">
+            <template #cell(delete)="data">
+              <b-button size="sm" @click="handleDeleteLocation(data.item)">
+                Delete
+              </b-button>
             </template>
-          </b-form-select>
 
-          <b-form-select v-model="regionForm.selectedItem"
-                         :options="regionForm.items"
-                         :disabled="countryForm.selectedItem === '' || regionForm.items.length === 0"
-                         class="mb-3">
-            <template #first>
-              <b-form-select-option :value="''" disabled>-- Please select a region --</b-form-select-option>
+            <template #cell()="data">
+              {{ data.value.text }}
             </template>
-          </b-form-select>
+          </b-table>
+          <b-button v-b-modal="'modal-location'" :disabled="!isApiKey" variant="primary">Add
+            location
+          </b-button>
+        </b-card>
+      </b-card-group>
 
-          <vue-typeahead-bootstrap
-              :data="cityForm.items"
-              v-model="cityForm.searchQuery"
-              size="lg"
-              :serializer="s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')"
-              placeholder="Type a city name..."
-              :disabled="regionForm.selectedItem === ''"
-              @hit="cityForm.selectedItem = $event"/>
-        </form>
-      </b-modal>
-
-      <b-form @submit.prevent="updateProfile()">
-        <b-card-group deck>
-          <b-card title="Profile">
-            <b-form-group id="input-group-1" label="Insidero API Key" label-for="input-1">
-              <b-form-input
-                  id="input-1"
-                  v-model="userProfile.apiKey"
-                  required>
-              </b-form-input>
-            </b-form-group>
-          </b-card>
-
-          <b-card title="Locations">
-            <b-table :items="userProfile.userLocations || []" :fields="['country', 'region', 'city', 'delete']">
-              <template #cell(delete)="data">
-                <b-button size="sm" @click="handleDeleteLocation(data.item)">
-                  Delete
-                </b-button>
-              </template>
-
-              <template #cell()="data">
-                {{ data.value.text }}
-              </template>
-            </b-table>
-            <b-button v-b-modal="'modal-location'" variant="primary">Add location</b-button>
-          </b-card>
-        </b-card-group>
-
-        <b-button type="submit" variant="primary">Update Profile</b-button>
-      </b-form>
-    </section>
+      <b-button class="mt-2" type="submit" variant="primary">Update Profile</b-button>
+    </b-form>
   </b-container>
 </template>
 
@@ -104,7 +110,7 @@ export default {
     }
   },
   mounted() {
-    if (Object.keys(this.userProfile).length > 0) {
+    if (!_.isEmpty(this.userProfile?.apiKey)) {
       this.getCountries()
     }
   },
@@ -113,15 +119,16 @@ export default {
   },
   computed: {
     ...mapState(['userProfile']),
+    isApiKey() {
+      return !_.isEmpty(this.userProfile?.apiKey)
+    }
   },
   watch: {
     'cityForm.searchQuery': function (newVal, oldVal) {
       this.getCitiesDebounced(this.countryForm.selectedItem, this.regionForm.selectedItem, this.cityForm.searchQuery)
     },
-    userProfile: function (newValue, oldValue) {
-      if (Object.keys(newValue).length >= 0 &&
-          this.countryForm.items.length === 0 &&
-          this.isLoading === false) {
+    'userProfile.apiKey': function (newValue, oldValue) {
+      if (!_.isEmpty(newValue)) {
         this.getCountries()
       }
     },

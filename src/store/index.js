@@ -1,76 +1,74 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import * as fb from '../firebase'
-import router from '../router/index'
+import {router} from '@/router'
 
 Vue.use(Vuex)
 
-const store = new Vuex.Store({
-  state: {
-    userProfile: {},
-  },
-  mutations: {
-    setUserProfile(state, val) {
-      state.userProfile = val
+export const store = new Vuex.Store({
+    state: {
+        userProfile: {},
     },
-    setPerformingRequest(state, val) {
-      state.performingRequest = val
+    mutations: {
+        setUserProfile(state, val) {
+            state.userProfile = val
+        },
     },
-  },
-  actions: {
-    async login({ dispatch }, form) {
-      // sign user in
-      const { user } = await fb.auth.signInWithEmailAndPassword(form.email, form.password)
-
-      // fetch user profile and set in state
-      dispatch('fetchUserProfile', user)
+    getters: {
+        userLocations: state => state.userProfile?.userLocations,
     },
-    async signup({ dispatch }, form) {
-      // sign user up
-      const { user } = await fb.auth.createUserWithEmailAndPassword(form.email, form.password)
+    actions: {
+        async login({dispatch}, form) {
+            // sign user in
+            const {user} = await fb.auth.signInWithEmailAndPassword(form.email, form.password)
 
-      // create user object in userCollections
-      await fb.usersCollection.doc(user.uid).set({
-        apiKey: form.apiKey
-      })
+            // fetch user profile and set in state
+            dispatch('fetchUserProfile', user)
+        },
+        async signup({dispatch}, form) {
+            // sign user up
+            const {user} = await fb.auth.createUserWithEmailAndPassword(form.email, form.password)
 
-      // fetch user profile and set in state
-      dispatch('fetchUserProfile', user)
-    },
-    async fetchUserProfile({ commit }, user) {
-      // fetch user profile
-      const userProfile = await fb.usersCollection.doc(user.uid).get()
+            // create user object in userCollections
+            await fb.usersCollection.doc(user.uid).set({
+                apiKey: '',
+            })
 
-      // set user profile in state
-      commit('setUserProfile', userProfile.data())
+            // fetch user profile and set in state
+            dispatch('fetchUserProfile', user)
+        },
+        async fetchUserProfile({commit}, user) {
+            // fetch user profile
+            const userProfile = await fb.usersCollection.doc(user.uid).get()
 
-      // change route to dashboard
-      if (router.currentRoute.path === '/login') {
-        router.push('/')
-      }
-    },
-    async logout({ commit }) {
-      // log user out
-      await fb.auth.signOut()
+            // set user profile in state
+            commit('setUserProfile', userProfile.data())
 
-      // clear user data from state
-      commit('setUserProfile', {})
+            // change route to dashboard
+            if (router.currentRoute.path === '/login') {
+                router.push('/')
+            }
+        },
+        async logout({commit}) {
+            // log user out
+            await fb.auth.signOut()
 
-      // redirect to login view
-      router.push('/login')
-    },
-    async updateProfile({ dispatch }, user) {
-      const userId = fb.auth.currentUser.uid
-      // update user object
-      const userRef = await fb.usersCollection.doc(userId).update({
-        apiKey: user.apiKey,
-        userLocations: user.userLocations,
-        offersHistory: user.offersHistory,
-      })
+            // clear user data from state
+            commit('setUserProfile', {})
 
-      dispatch('fetchUserProfile', { uid: userId })
+            // redirect to login view
+            router.push('/login')
+        },
+        async updateProfile({dispatch}, user) {
+            const userId = fb.auth.currentUser.uid
+            // update user object
+            const userRef = await fb.usersCollection.doc(userId).update({
+                apiKey: user.apiKey,
+                userLocations: user.userLocations,
+                offersHistory: user.offersHistory,
+            })
+
+            dispatch('fetchUserProfile', {uid: userId})
+        }
     }
-  }
 })
-
-export default store

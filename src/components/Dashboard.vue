@@ -18,7 +18,7 @@ export default {
     }
   },
   mounted() {
-    if (Object.keys(this.userProfile).length > 0) {
+    if (this.userProfile != null) {
       this.getOffers(this.$route.query)
     }
   },
@@ -34,17 +34,8 @@ export default {
       this.getOffers(to.query);
     },
     userProfile: function (newValue, oldValue) {
-      if (Object.keys(this.$route.query).length === 0 &&
-          (newValue?.userLocations || []).length > 0) {
-        const location = newValue.userLocations[0]
-        const query = {
-          country: location.country.value,
-          region: location.region.value,
-          city: location.city.value,
-        }
-        this.$router.push({path: '/', query: query})
-      } else if (Object.keys(newValue).length >= 0 &&
-          Object.keys(this.offersInfo).length === 0 &&
+      if (newValue != null &&
+          this.offersInfo == null &&
           this.isLoading === false) {
         this.getOffers(this.$route.query)
       }
@@ -52,7 +43,7 @@ export default {
   },
   methods: {
     async getOffers(query) {
-      if (Object.keys(query).length > 0 && this.userProfile?.apiKey) {
+      if (query != null && this.userProfile?.apiKey) {
         this.isLoading = true;
 
         console.log("Getting offers...", this.userProfile.apiKey)

@@ -19,9 +19,9 @@
           <template #button-content>
             <em>User</em>
           </template>
-          <b-dropdown-item v-if="isLoggedIn" :to="{ path: 'settings' }">Profile</b-dropdown-item>
-          <b-dropdown-item v-if="isLoggedIn" @click="logout()">Sign Out</b-dropdown-item>
           <b-dropdown-item v-if="!isLoggedIn" :to="{ path: 'login' }">Login</b-dropdown-item>
+          <b-dropdown-item v-if="isLoggedIn" :to="{ path: 'settings' }">Settings</b-dropdown-item>
+          <b-dropdown-item v-if="isLoggedIn" @click="logout()">Sign Out</b-dropdown-item>
         </b-nav-item-dropdown>
       </b-navbar-nav>
     </b-collapse>
@@ -30,6 +30,7 @@
 
 <script>
 import {mapState} from 'vuex'
+import {auth} from '@/firebase'
 
 export default {
   data() {
@@ -40,7 +41,9 @@ export default {
   computed: {
     ...mapState(['userProfile']),
     isLoggedIn() {
-      return Object.keys(this.userProfile).length >= 1
+      const loggedIn = auth.currentUser != null;
+      // console.log("SiteNav: Logged in: ", loggedIn, " user: ", auth.currentUser)
+      return loggedIn
     }
   },
   methods: {
@@ -53,7 +56,7 @@ export default {
         region: location.region.value,
         city: location.city.value,
       }
-      this.$router.push({path: '/', query: query})
+      this.$router.push({path: '/offers', query: query})
     },
   }
 }
