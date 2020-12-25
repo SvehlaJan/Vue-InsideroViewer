@@ -14,12 +14,11 @@
           {{ location.city.text }}
         </b-nav-item>
       </b-navbar-nav>
-      <b-navbar-nav class="ml-auto">
+      <b-navbar-nav class="ml-auto" v-if="isLoggedIn">
         <b-nav-item-dropdown right>
           <template #button-content>
             <em>User</em>
           </template>
-          <b-dropdown-item v-if="!isLoggedIn" :to="{ path: 'login' }">Login</b-dropdown-item>
           <b-dropdown-item v-if="isLoggedIn" :to="{ path: 'settings' }">Settings</b-dropdown-item>
           <b-dropdown-item v-if="isLoggedIn" @click="logout()">Sign Out</b-dropdown-item>
         </b-nav-item-dropdown>
