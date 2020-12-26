@@ -40,7 +40,14 @@ auth.onAuthStateChanged(async function (user) {
         app = new Vue({
             router,
             store,
-            render: h => h(App)
+            render: h => h(App),
+            created() { // https://stackoverflow.com/questions/47677220/vuejs-history-mode-with-github-gitlab-pages
+                if (sessionStorage.redirect) {
+                    const redirect = sessionStorage.redirect
+                    delete sessionStorage.redirect
+                    this.$router.push(redirect)
+                }
+            },
         }).$mount('#app')
     }
 })
