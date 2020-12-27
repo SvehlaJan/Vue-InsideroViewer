@@ -16,7 +16,7 @@
                 variant="outline-primary"
                 v-for="category in options"
                 v-bind:key="category.text"
-                :pressed="category.value === $route.query.type"
+                :pressed="category.value == $route.query.type"
                 @click="setLocation(null, category)">
               {{ category.text }}
             </b-button>
@@ -38,7 +38,7 @@
     </b-sidebar>
 
     <b-navbar toggleable="md" type="dark" variant="primary">
-      <b-button v-if="isLoggedIn"
+      <b-button v-if="hasLocations"
                 class="mr-4"
                 variant="outline-light"
                 v-b-toggle.sidebar-nav>
@@ -67,6 +67,7 @@
 <script>
 import {mapState} from 'vuex'
 import {auth} from '@/firebase'
+import _ from "lodash";
 
 export default {
   data() {
@@ -75,6 +76,7 @@ export default {
         {text: 'House', value: 'house'},
         {text: 'Flat', value: 'flat'},
         {text: 'Land', value: 'land'},
+        {text: 'All', value: null},
       ]
     }
   },
@@ -82,6 +84,9 @@ export default {
     ...mapState(['userProfile']),
     isLoggedIn() {
       return auth.currentUser != null;
+    },
+    hasLocations() {
+      return !_.isEmpty(this.userProfile?.userLocations);
     }
   },
   methods: {
@@ -99,6 +104,8 @@ export default {
       if (category != null) {
         newQuery.type = category.value;
       }
+      
+      Object.keys(newQuery).forEach((key) => (newQuery[key] == null) && delete newQuery[key]);
 
       this.$router.push({path: '/offers', query: newQuery})
     },
