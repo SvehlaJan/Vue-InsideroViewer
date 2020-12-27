@@ -1,21 +1,21 @@
 <template>
   <b-container fluid="xl">
     <b-overlay :show="isLoading" rounded="sm">
-      <h3 v-if="(favorites || []).length > 0">Favorites</h3>
+      <h3 class="mt-4" v-if="(favorites || []).length > 0">Favorites</h3>
       <OffersTable :fields="fields"
                    :offers="favorites"
                    v-if="(favorites || []).length > 0"
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
-      <h3 v-if="(untagged || []).length > 0">New</h3>
+      <h3 class="mt-4" v-if="(untagged || []).length > 0">New</h3>
       <OffersTable :fields="fields"
                    :offers="untagged"
                    v-if="(untagged || []).length > 0"
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
-      <h3 v-if="(archived || []).length > 0">Archived</h3>
+      <h3 class="mt-4" v-if="(archived || []).length > 0">Archived</h3>
       <OffersTable :fields="fields"
                    :offers="archived"
                    v-if="(archived || []).length > 0"

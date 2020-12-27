@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import OffersList from './OffersList.vue'
+import OffersList from '../components/OffersList.vue'
 import {mapState} from "vuex";
 
 export default {
@@ -30,7 +30,7 @@ export default {
   },
   watch: {
     $route(to, from) {
-      console.log("Route change: ", to.query)
+      // console.log("Route change: ", to.query)
       this.getOffers(to.query);
     },
     userProfile: function (newValue, oldValue) {
@@ -46,7 +46,7 @@ export default {
       if (query != null && this.userProfile?.apiKey) {
         this.isLoading = true;
 
-        console.log("Getting offers...", this.userProfile.apiKey)
+        // console.log("Getting offers...", this.userProfile.apiKey)
         const params = {
           api_key: this.userProfile.apiKey,
           country: query.country,
@@ -61,7 +61,7 @@ export default {
         this.$axios
             .get("/offers?" + paramsStr)
             .then(response => {
-              console.log("New offers received: ", Object.keys(response['data']['results']).length)
+              // console.log("New offers received: ", Object.keys(response['data']['results']).length)
               this.offersInfo = response['data']['info']
               this.offers = Object.values(response['data']['results'])
             })

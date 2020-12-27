@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Dashboard from "@/components/Dashboard";
+import Dashboard from "@/pages/Dashboard";
 import {auth} from '@/firebase'
 import {store} from '@/store'
 import _ from "lodash";
@@ -27,12 +27,12 @@ const routes = [
     {
         path: '/login',
         name: 'Login',
-        component: () => import(/* webpackChunkName: "login" */ '../views/Login.vue')
+        component: () => import(/* webpackChunkName: "login" */ '../pages/Login.vue')
     },
     {
         path: '/settings',
         name: 'settings',
-        component: () => import(/* webpackChunkName: "settings" */ '../views/Settings.vue'),
+        component: () => import(/* webpackChunkName: "settings" */ '../pages/Settings.vue'),
         meta: {
             requiresAuth: true
         }
@@ -66,6 +66,7 @@ router.beforeEach((to, from, next) => {
                     country: firstLocation.country.value,
                     region: firstLocation.region.value,
                     city: firstLocation.city.value,
+                    type: "house"
                 },
             })
         } else {
