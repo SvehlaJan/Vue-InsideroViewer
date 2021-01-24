@@ -14,7 +14,17 @@
     </template>
 
     <template #cell(id)="data">
-      <a :href="`${data.item.urls.slice(-1)[0]['url']}`">{{ data.item.id }}</a>
+      <b-link target="_blank"
+              rel="noopener noreferrer"
+              @click="showDetail(data.item)">
+        {{ data.item.id }}
+      </b-link>
+
+      <!--      <b-link target="_blank"-->
+      <!--              rel="noopener noreferrer"-->
+      <!--              :href="`${data.item.urls.slice(-1)[0]['url']}`">-->
+      <!--        {{ data.item.id }}-->
+      <!--      </b-link>-->
     </template>
 
     <template #cell(favorite)="data">
@@ -40,7 +50,7 @@
             <b-card-body title="Urls">
               <b-table :items="row.item.urls" thead-class="hidden_header">
                 <template #cell(url)="data">
-                  <a :href="`${data.value}`">{{ data.value }}</a>
+                  <b-link target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{ data.value }}</b-link>
                 </template>
               </b-table>
             </b-card-body>
@@ -88,6 +98,11 @@ export default {
     }
   },
   methods: {
+    showDetail(offer) {
+      let result = new Promise((resolve) => this.$emit('showDetail', offer, resolve));
+      result.then((value) => console.log(value))
+      return result
+    },
     toggleFavorite(offer) {
       let result = new Promise((resolve) => this.$emit('toggleFavorite', offer, resolve));
       result.then((value) => console.log(value))

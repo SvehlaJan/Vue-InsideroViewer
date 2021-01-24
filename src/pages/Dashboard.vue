@@ -52,16 +52,19 @@ export default {
           country: query.country,
           region: query.region,
           city: query.city,
+          neighborhood: query.neighborhood,
           type: query.type,
+          active: query.active,
           offer: "sell",
-          active: "true",
         }
         Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
         const paramsStr = new URLSearchParams(params).toString();
+        let url = "/offers?" + paramsStr
+        console.log("Fetching offers from: ", url)
         this.$axios
-            .get("/offers?" + paramsStr)
+            .get(url)
             .then(response => {
-              // console.log("New offers received: ", Object.keys(response['data']['results']).length)
+              console.log("New offers received: ", Object.keys(response['data']['results']).length)
               this.offersInfo = response['data']['info']
               this.offers = Object.values(response['data']['results'])
             })

@@ -31,7 +31,7 @@
             <b-button type="submit" variant="primary">Login</b-button>
           </b-row>
           <b-row class="mt-4">
-            <b-button @click="toggleForm()" variant="success">Create an Account</b-button>
+            <b-link @click="toggleForm()">Create an Account</b-link>
           </b-row>
           <!--          <b-row class="mt-2">-->
           <!--            <b-button @click="togglePasswordReset()" variant="secondary">Forgot Password</b-button>-->
@@ -71,7 +71,7 @@
             <b-button type="submit" variant="primary">Register</b-button>
           </b-row>
           <b-row class="mt-4">
-            <b-button @click="toggleForm()" variant="success">Back to Log In</b-button>
+            <b-link @click="toggleForm()">Back to Log In</b-link>
           </b-row>
         </b-container>
       </b-form>

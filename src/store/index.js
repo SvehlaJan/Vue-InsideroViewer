@@ -8,16 +8,23 @@ Vue.use(Vuex)
 export const store = new Vuex.Store({
     state: {
         userProfile: {},
+        sideBarVisible: false,
     },
     mutations: {
         setUserProfile(state, val) {
             state.userProfile = val
+        },
+        setSideBarVisible(state, val) {
+            state.sideBarVisible = val
         },
     },
     getters: {
         userLocations: state => state.userProfile?.userLocations,
     },
     actions: {
+        async showSideBar({commit}, show) {
+            commit('setSideBarVisible', show)
+        },
         async login({dispatch}, form) {
             // sign user in
             const {user} = await fb.auth.signInWithEmailAndPassword(form.email, form.password)

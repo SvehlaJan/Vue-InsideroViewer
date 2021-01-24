@@ -1,10 +1,37 @@
 <template>
-  <b-container fluid="xl">
+  <b-container>
+    <b-modal id="modalEmbed" size="xl" ok-only hide-header>
+      <b-embed
+          type="iframe"
+          aspect="16by9"
+          :src="selectedOfferUrl"
+          allowfullscreen/>
+
+      <template #modal-footer="{ ok }">
+        <b-button size="sm"
+                  :variant="selectedOffer.archived.value ? 'dark' : 'outline-dark'"
+                  @click="toggleArchive(selectedOffer)">
+          <b-icon icon="archive"></b-icon>
+        </b-button>
+
+        <b-button size="sm"
+                  :variant="selectedOffer.favorite.value ? 'primary' : 'outline-primary'"
+                  @click="toggleFavorite(selectedOffer)">
+          <b-icon icon="heart"></b-icon>
+        </b-button>
+
+        <b-button variant="primary" @click="ok()">
+          OK
+        </b-button>
+      </template>
+    </b-modal>
+
     <b-overlay :show="isLoading" rounded="sm">
       <h3 class="mt-4" v-if="(favorites || []).length > 0">Favorites</h3>
       <OffersTable :fields="fields"
                    :offers="favorites"
                    v-if="(favorites || []).length > 0"
+                   @showDetail="showDetail"
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
@@ -12,6 +39,7 @@
       <OffersTable :fields="fields"
                    :offers="untagged"
                    v-if="(untagged || []).length > 0"
+                   @showDetail="showDetail"
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
@@ -19,6 +47,7 @@
       <OffersTable :fields="fields"
                    :offers="archived"
                    v-if="(archived || []).length > 0"
+                   @showDetail="showDetail"
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
     </b-overlay>
@@ -41,7 +70,7 @@ export default {
         {key: 'current_price', sortable: true, label: "Price"},
         {key: 'published', sortable: true},
         {key: 'updated', sortable: true},
-        {key: 'subtype', sortable: false},
+        {key: 'type', sortable: false},
         {key: 'rooms', sortable: false},
         {key: 'size', sortable: true},
         {key: 'land', sortable: true},
@@ -49,6 +78,8 @@ export default {
         {key: 'archived', sortable: false, label: ""},
         {key: 'show_details', sortable: false, label: ""},
       ],
+      selectedOffer: {},
+      selectedOfferUrl: "",
     }
   },
   computed: {
@@ -62,7 +93,7 @@ export default {
       const offersHistory = this.userProfile.offersHistory;
       return this.items.map(function (item) {
         let offerId = item["general"]["id"];
-        let subtype = item["general"]["subtype"]
+        let subtype = item["general"]["subtype"] || item["general"]["type"]
         let rawPrices = item["price"];
         let currentPriceStr = rawPrices ? `${rawPrices["current"]} ${rawPrices["currency"]}` : "";
         let discountPrice = rawPrices ? (rawPrices["max"] - rawPrices["current"]) : null;
@@ -112,7 +143,7 @@ export default {
           published: publishedDateStr,
           updated: lastUpdatedDateStr,
           updates: updates,
-          subtype: subtype,
+          type: subtype,
           rooms: roomsStr,
           size: sizeStr,
           land: landStr,
@@ -152,13 +183,27 @@ export default {
       result.then((value) => console.log(value))
       return result
     },
+    showDetail(offer) {
+      for (let url of offer.urls) {
+        let domain = (new URL(url.url));
+        if (domain.hostname.replace("www.", "") === "sreality.cz") {
+          this.selectedOffer = offer;
+          this.selectedOfferUrl = url.url;
+          this.$bvModal.show('modalEmbed');
+          return;
+        }
+      }
+      window.open(offer.urls[0].url, '_blank');
+    },
     toggleFavorite(offer) {
       const newValue = (offer.category === 1) ? 0 : 1;
-      this.updateCategory(newValue, offer.id)
+      this.updateCategory(newValue, offer.id);
+      this.$bvModal.hide('modalEmbed');
     },
     toggleArchive(offer) {
       const newValue = (offer.category === 10) ? 0 : 10;
-      this.updateCategory(newValue, offer.id)
+      this.updateCategory(newValue, offer.id);
+      this.$bvModal.hide('modalEmbed');
     }
   }
 }

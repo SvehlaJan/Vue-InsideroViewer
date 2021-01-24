@@ -7,6 +7,9 @@ import _ from "lodash";
 
 Vue.use(VueRouter)
 
+// const linkActiveClass = 'my-link-active-class'
+// Vue.material.router.linkActiveClass = linkActiveClass
+
 const routes = [
     {
         path: '/',
@@ -36,12 +39,13 @@ const routes = [
         meta: {
             requiresAuth: true
         }
-    }
+    },
 ]
 
 export const router = new VueRouter({
     mode: 'history',
     base: process.env.BASE_URL,
+    // linkActiveClass,
     routes
 })
 
@@ -63,10 +67,11 @@ router.beforeEach((to, from, next) => {
             next({
                 path: '/offers',
                 query: {
-                    country: firstLocation.country.value,
-                    region: firstLocation.region.value,
-                    city: firstLocation.city.value,
-                    type: "house"
+                    country: firstLocation.country?.value,
+                    region: firstLocation.region?.value,
+                    city: firstLocation.city?.value,
+                    neighborhood: firstLocation.neighborhood?.value,
+                    active: "true",
                 },
             })
         } else {
