@@ -20,14 +20,16 @@
           <b-icon icon="heart"></b-icon>
         </b-button>
 
-        <b-button variant="primary" @click="ok()">
+        <b-button variant="primary"
+                  size="sm"
+                  @click="ok()">
           OK
         </b-button>
       </template>
     </b-modal>
 
     <b-overlay :show="isLoading" rounded="sm">
-      <h3 class="mt-4" v-if="(favorites || []).length > 0">Favorites</h3>
+      <h5 class="mt-4" v-if="(favorites || []).length > 0">Favorites</h5>
       <OffersTable :fields="fields"
                    :offers="favorites"
                    v-if="(favorites || []).length > 0"
@@ -35,7 +37,7 @@
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
-      <h3 class="mt-4" v-if="(untagged || []).length > 0">New</h3>
+      <h5 class="mt-4" v-if="(untagged || []).length > 0">New</h5>
       <OffersTable :fields="fields"
                    :offers="untagged"
                    v-if="(untagged || []).length > 0"
@@ -43,7 +45,7 @@
                    @toggleArchive="toggleArchive"
                    @toggleFavorite="toggleFavorite"/>
 
-      <h3 class="mt-4" v-if="(archived || []).length > 0">Archived</h3>
+      <h5 class="mt-4" v-if="(archived || []).length > 0">Archived</h5>
       <OffersTable :fields="fields"
                    :offers="archived"
                    v-if="(archived || []).length > 0"
@@ -74,9 +76,7 @@ export default {
         {key: 'rooms', sortable: false},
         {key: 'size', sortable: true},
         {key: 'land', sortable: true},
-        {key: 'favorite', sortable: false, label: ""},
-        {key: 'archived', sortable: false, label: ""},
-        {key: 'show_details', sortable: false, label: ""},
+        {key: 'controls', sortable: false, label: ""},
       ],
       selectedOffer: {},
       selectedOfferUrl: "",
@@ -94,6 +94,12 @@ export default {
       return this.items.map(function (item) {
         let offerId = item["general"]["id"];
         let subtype = item["general"]["subtype"] || item["general"]["type"]
+        if (subtype === "commercial") {
+          subtype = "comm";
+        } else if (subtype === "parkingSpot") {
+          subtype = "parking";
+        }
+
         let rawPrices = item["price"];
         let currentPriceStr = rawPrices ? `${rawPrices["current"]} ${rawPrices["currency"]}` : "";
         let discountPrice = rawPrices ? (rawPrices["max"] - rawPrices["current"]) : null;
@@ -101,7 +107,7 @@ export default {
         let prices = rawPrices ? [
           {type: "Min", price: `${rawPrices["min"]} ${rawPrices["currency"]}`},
           {type: "Max", price: `${rawPrices["max"]} ${rawPrices["currency"]}`},
-          {type: "Current", price: currentPriceStr},
+          {type: "Current", price: `${currentPriceStr} ${discountPriceStr}`},
           {type: "PSQ", price: `${rawPrices["perSquareMeter"]} ${rawPrices["currency"]}`},
         ] : null;
 
@@ -139,7 +145,7 @@ export default {
 
         return {
           id: offerId,
-          current_price: `${currentPriceStr}\n${discountPriceStr}`,
+          current_price: currentPriceStr,
           published: publishedDateStr,
           updated: lastUpdatedDateStr,
           updates: updates,
@@ -194,6 +200,15 @@ export default {
         }
       }
       window.open(offer.urls[0].url, '_blank');
+    },
+    hasSelectedOfferMoreUrls(offer) {
+
+    },
+    getSelectedOfferSortedUrls(offer) {
+
+    },
+    navigateToSelectedOfferNextUrl(offer) {
+
     },
     toggleFavorite(offer) {
       const newValue = (offer.category === 1) ? 0 : 1;

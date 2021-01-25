@@ -7,39 +7,29 @@
            hover
            striped
            stacked="sm">
-    <template #cell(show_details)="data">
-      <b-button size="sm" @click="data.toggleDetails" class="mr-2">
-        {{ data.detailsShowing ? 'Less' : 'More' }}
-      </b-button>
-    </template>
 
     <template #cell(id)="data">
-      <b-link target="_blank"
-              rel="noopener noreferrer"
-              @click="showDetail(data.item)">
-        {{ data.item.id }}
-      </b-link>
-
-      <!--      <b-link target="_blank"-->
-      <!--              rel="noopener noreferrer"-->
-      <!--              :href="`${data.item.urls.slice(-1)[0]['url']}`">-->
-      <!--        {{ data.item.id }}-->
-      <!--      </b-link>-->
+      <b-link @click="showDetail(data.item)"> {{ data.item.id }}</b-link>
     </template>
 
-    <template #cell(favorite)="data">
+    <template #cell(controls)="data">
       <b-button size="sm"
                 :variant="data.value ? 'primary' : 'outline-primary'"
                 @click="toggleFavorite(data.item)">
         <b-icon icon="heart"></b-icon>
       </b-button>
-    </template>
 
-    <template #cell(archived)="data">
       <b-button size="sm"
+                class="ml-2"
                 :variant="data.value ? 'dark' : 'outline-dark'"
                 @click="toggleArchive(data.item)">
         <b-icon icon="archive"></b-icon>
+      </b-button>
+
+      <b-button size="sm"
+                class="ml-2"
+                @click="data.toggleDetails">
+        {{ data.detailsShowing ? 'Less' : 'More' }}
       </b-button>
     </template>
 

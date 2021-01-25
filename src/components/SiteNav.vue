@@ -80,12 +80,12 @@ export default {
         {text: 'House', value: 'house'},
         {text: 'Flat', value: 'flat'},
         {text: 'Land', value: 'land'},
-        {text: 'All', value: null},
+        {text: 'All', value: 'all'},
       ],
       propertyStates: [
         {text: 'Active', value: 'true'},
         {text: 'Inactive', value: 'false'},
-        {text: 'All', value: null},
+        {text: 'All', value: 'all'},
       ],
     }
   },
