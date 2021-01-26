@@ -20,11 +20,8 @@ Vue.use(VueGoogleMaps, {
     },
 })
 
-const axiosConfig = {
-    baseURL: ' https://api.insidero.com/v3',
-    timeout: 30000,
-};
-Vue.prototype.$axios = axios.create(axiosConfig)
+axios.defaults.baseURL = 'https://api.insidero.com/v3'
+axios.defaults.timeout = 30000
 
 Vue.use(VueLodash, {lodash: lodash})
 

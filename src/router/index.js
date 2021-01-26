@@ -1,20 +1,17 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Dashboard from "@/pages/Dashboard";
+import OffersList from "@/components/OffersList";
 import {auth} from '@/firebase'
 import {store} from '@/store'
 import _ from "lodash";
 
 Vue.use(VueRouter)
 
-// const linkActiveClass = 'my-link-active-class'
-// Vue.material.router.linkActiveClass = linkActiveClass
-
 const routes = [
     {
         path: '/',
         name: 'Dashboard',
-        component: Dashboard,
+        component: OffersList,
         meta: {
             requiresAuth: true
         }
@@ -22,7 +19,7 @@ const routes = [
     {
         path: '/offers',
         name: 'Dashboard',
-        component: Dashboard,
+        component: OffersList,
         meta: {
             requiresAuth: true
         }

@@ -3,6 +3,7 @@
            :fields="fields"
            :sort-by.sync="sortBy"
            :sort-desc.sync="sortDesc"
+           :busy="offersLoading"
            small
            hover
            striped
@@ -14,14 +15,14 @@
 
     <template #cell(controls)="data">
       <b-button size="sm"
-                :variant="data.value ? 'primary' : 'outline-primary'"
+                :variant="data.item.favorite ? 'primary' : 'outline-primary'"
                 @click="toggleFavorite(data.item)">
         <b-icon icon="heart"></b-icon>
       </b-button>
 
       <b-button size="sm"
                 class="ml-2"
-                :variant="data.value ? 'dark' : 'outline-dark'"
+                :variant="data.item.archived ? 'dark' : 'outline-dark'"
                 @click="toggleArchive(data.item)">
         <b-icon icon="archive"></b-icon>
       </b-button>
@@ -75,11 +76,17 @@
   </b-table>
 </template>
 <script>
+
+import {mapGetters} from "vuex";
+
 export default {
   name: 'OffersTable',
   props: {
     fields: {},
     offers: {},
+  },
+  computed: {
+    ...mapGetters(['offersLoading']),
   },
   data() {
     return {
@@ -89,19 +96,15 @@ export default {
   },
   methods: {
     showDetail(offer) {
-      let result = new Promise((resolve) => this.$emit('showDetail', offer, resolve));
-      result.then((value) => console.log(value))
-      return result
+      this.$store.dispatch('setSelectedOffer', offer)
     },
     toggleFavorite(offer) {
-      let result = new Promise((resolve) => this.$emit('toggleFavorite', offer, resolve));
-      result.then((value) => console.log(value))
-      return result
+      const newValue = (offer.category === 1) ? 0 : 1;
+      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
     },
     toggleArchive(offer) {
-      let result = new Promise((resolve) => this.$emit('toggleArchive', offer, resolve));
-      result.then((value) => console.log(value))
-      return result
+      const newValue = (offer.category === 10) ? 0 : 10;
+      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
     }
   }
 }

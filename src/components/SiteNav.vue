@@ -1,9 +1,8 @@
 <template>
-  <b-container>
+  <div>
     <b-sidebar id="sidebar-nav"
                backdrop-variant="dark"
-               v-model="isSidebarVisible"
-               no-close-on-route-change="false"
+               no-close-on-route-change
                shadow>
       <template>
         <div class="p-2">
@@ -12,7 +11,7 @@
                 variant="outline-primary"
                 v-for="state in propertyStates"
                 v-bind:key="state.text"
-                :pressed="state.value == $route.query.active"
+                :pressed="state.value === $route.query.active"
                 @click="setLocation(null, null, state)">
               {{ state.text }}
             </b-button>
@@ -23,7 +22,7 @@
                 variant="outline-primary"
                 v-for="category in propertyTypes"
                 v-bind:key="category.text"
-                :pressed="category.value == $route.query.type"
+                :pressed="category.value === $route.query.type || ($route.query.type == null && category.value === 'all')"
                 @click="setLocation(null, category, null)">
               {{ category.text }}
             </b-button>
@@ -65,7 +64,7 @@
 
       <b-navbar-brand :to="{ path: '/' }">Insidero Viewer</b-navbar-brand>
     </b-navbar>
-  </b-container>
+  </div>
 </template>
 
 <script>
@@ -90,15 +89,12 @@ export default {
     }
   },
   computed: {
-    ...mapState(['userProfile', 'sideBarVisible']),
+    ...mapState(['userProfile']),
     isLoggedIn() {
       return auth.currentUser != null;
     },
     hasLocations() {
       return !_.isEmpty(this.userProfile?.userLocations);
-    },
-    isSidebarVisible() {
-      return this.sideBarVisible;
     },
   },
   watch: {
@@ -133,16 +129,16 @@ export default {
       let match = true;
       let queryLocation = this.$route.query;
       if (queryLocation.country || location.country) {
-        match &= location.country?.value == this.$route.query.country;
+        match = match && location.country?.value == this.$route.query.country;
       }
       if (queryLocation.region || location.region) {
-        match &= location.region?.value == this.$route.query.region;
+        match = match && location.region?.value == this.$route.query.region;
       }
       if (queryLocation.city || location.city) {
-        match &= location.city?.value == this.$route.query.city;
+        match = match && location.city?.value == this.$route.query.city;
       }
       if (queryLocation.neighborhood || location.neighborhood) {
-        match &= location.neighborhood?.value == this.$route.query.neighborhood;
+        match = match && location.neighborhood?.value == this.$route.query.neighborhood;
       }
       return match;
     },
