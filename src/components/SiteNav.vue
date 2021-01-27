@@ -3,22 +3,25 @@
     <b-sidebar id="sidebar-nav"
                backdrop-variant="dark"
                no-close-on-route-change
+               title="Your Locations"
                shadow>
       <template>
         <div class="p-2">
-          <b-button-group class="mt-3">
+          <b-button-group class="mt-1 ml-3">
             <b-button
+                class="py-1 px-2"
                 variant="outline-primary"
                 v-for="state in propertyStates"
                 v-bind:key="state.text"
-                :pressed="state.value === $route.query.active"
+                :pressed="state.value === $route.query.active || ($route.query.type == null && state.value === 'all')"
                 @click="setLocation(null, null, state)">
               {{ state.text }}
             </b-button>
           </b-button-group>
 
-          <b-button-group class="mt-2">
+          <b-button-group class="mt-2 ml-3">
             <b-button
+                class="py-1 px-2"
                 variant="outline-primary"
                 v-for="category in propertyTypes"
                 v-bind:key="category.text"
@@ -28,10 +31,10 @@
             </b-button>
           </b-button-group>
 
-          <nav class="mt-5">
+          <nav class="mt-4" v-if="userLocations != null">
             <b-nav vertical pills>
               <b-nav-item
-                  v-for="location in userProfile.userLocations"
+                  v-for="location in userLocations"
                   v-bind:key="location.city.value"
                   :active="isLocationActive(location)"
                   @click="setLocation(location, null, null)">
@@ -40,7 +43,9 @@
             </b-nav>
           </nav>
 
-          <nav class="mt-5" v-if="isLoggedIn">
+          <hr class="my-3"/>
+
+          <nav class="mt-4" v-if="isLoggedIn">
             <b-nav vertical pills>
               <b-nav-item
                   :to="{ path: 'settings' }"
@@ -68,7 +73,7 @@
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import {mapGetters, mapState} from 'vuex'
 import {auth} from '@/firebase'
 import _ from "lodash";
 
@@ -90,16 +95,13 @@ export default {
   },
   computed: {
     ...mapState(['userProfile']),
+    ...mapGetters(['userLocations']),
     isLoggedIn() {
       return auth.currentUser != null;
     },
     hasLocations() {
-      return !_.isEmpty(this.userProfile?.userLocations);
+      return !_.isEmpty(this.userLocations);
     },
-  },
-  watch: {
-    'sideBarVisible': function (newValue, oldValue) {
-    }
   },
   methods: {
     logout() {

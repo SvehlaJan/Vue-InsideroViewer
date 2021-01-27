@@ -1,97 +1,58 @@
 <template>
-  <b-container id="login">
-    <div :class="{ 'signup-form': !showLoginForm }" class="col2">
-      <b-form v-if="showLoginForm" @submit.prevent="login()">
-        <h1 class="mt-4">Welcome</h1>
+  <div>
+    <b-container v-if="showLoginForm">
+      <h1 class="mt-4">Welcome</h1>
 
-        <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>
-        <b-alert v-model="showError" variant="danger" show>{{ errorMessage }}</b-alert>
+      <EmailCredentialsForm
+          @submitForm="signInWithEmailAndPassword"
+          :error-message="errorMessage"
+          :show-error="showError"
+          :show-success="showSuccess"
+          submit-button-label="Login"/>
 
-        <b-form-group id="input-group-1" label="Email address:" label-for="email1" class="mt-4">
-          <b-form-input
-              id="email1"
-              v-model="loginForm.email"
-              type="email"
-              required
-              placeholder="Enter email">
-          </b-form-input>
-        </b-form-group>
+      <div class="mt-2">
+        <b-link @click="togglePasswordReset()">Forgot Password</b-link>
+      </div>
 
-        <b-form-group id="input-group-2" label="Password:" label-for="password1">
-          <b-form-input
-              id="password1"
-              v-model="loginForm.password"
-              type="password"
-              required
-              placeholder="******">
-          </b-form-input>
-        </b-form-group>
-        <b-container>
-          <b-row>
-            <b-button type="submit" variant="primary">Login</b-button>
-          </b-row>
-          <b-row class="mt-4">
-            <b-link @click="toggleForm()">Create an Account</b-link>
-          </b-row>
-          <!--          <b-row class="mt-2">-->
-          <!--            <b-button @click="togglePasswordReset()" variant="secondary">Forgot Password</b-button>-->
-          <!--          </b-row>-->
-        </b-container>
+      <h3 class="mt-5">New here?</h3>
 
-        <PasswordReset v-if="showPasswordReset" @close="togglePasswordReset()"></PasswordReset>
-      </b-form>
-      <b-form v-else @submit.prevent="signup()">
-        <h1 class="mt-4">Get Started</h1>
+      <b-container class="p-0 mt-2">
+        <b-link class="mr-2" @click="toggleForm()">Create an Account</b-link>
+        /
+        <b-link class="ml-2" @click="signInAnonymously()">Sign in as guest</b-link>
+      </b-container>
 
-        <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>
-        <b-alert v-model="showError" variant="danger" show>{{ errorMessage }}</b-alert>
+      <PasswordReset v-if="showPasswordReset" @close="togglePasswordReset()"></PasswordReset>
+    </b-container>
 
-        <b-form-group id="input-group-3" label="Email address:" label-for="email2" class="mt-4">
-          <b-form-input
-              id="email2"
-              v-model="loginForm.email"
-              type="email"
-              required
-              placeholder="Enter email">
-          </b-form-input>
-        </b-form-group>
+    <b-container v-else>
+      <h1 class="mt-4">Get Started</h1>
 
-        <b-form-group id="input-group-4" label="Password:" label-for="password2">
-          <b-form-input
-              id="password2"
-              v-model="loginForm.password"
-              type="password"
-              required
-              placeholder="******">
-          </b-form-input>
-        </b-form-group>
+      <EmailCredentialsForm
+          @submitForm="signUpWithEmailAndPassword"
+          :error-message="errorMessage"
+          :show-error="showError"
+          :show-success="showSuccess"
+          submit-button-label="Register"/>
 
-        <b-container>
-          <b-row>
-            <b-button type="submit" variant="primary">Register</b-button>
-          </b-row>
-          <b-row class="mt-4">
-            <b-link @click="toggleForm()">Back to Log In</b-link>
-          </b-row>
-        </b-container>
-      </b-form>
-    </div>
-  </b-container>
+      <div class="mt-2">
+        <b-link @click="toggleForm()">Back to Log In</b-link>
+      </div>
+    </b-container>
+  </div>
 </template>
 
 <script>
 import PasswordReset from '@/components/PasswordReset'
+import EmailCredentialsForm from "@/components/EmailCredentialsForm";
 
 export default {
   components: {
-    PasswordReset
+    PasswordReset,
+    EmailCredentialsForm,
   },
   data() {
     return {
-      loginForm: {
-        email: '',
-        password: '',
-      },
       showLoginForm: true,
       showPasswordReset: false,
       showSuccess: false,
@@ -109,12 +70,12 @@ export default {
       this.showError = false
       console.log("showPasswordReset: ", this.showPasswordReset)
     },
-    async login() {
+    async signInWithEmailAndPassword(formData) {
       this.showError = false
       try {
-        await this.$store.dispatch('login', {
-          email: this.loginForm.email,
-          password: this.loginForm.password
+        await this.$store.dispatch('signInWithEmailAndPassword', {
+          email: formData.email,
+          password: formData.password
         })
       } catch (error) {
         if (error.code) {
@@ -125,12 +86,12 @@ export default {
         }
       }
     },
-    async signup() {
+    async signUpWithEmailAndPassword(formData) {
       this.showError = false
       try {
-        await this.$store.dispatch('signup', {
-          email: this.loginForm.email,
-          password: this.loginForm.password,
+        await this.$store.dispatch('signUpWithEmailAndPassword', {
+          email: formData.email,
+          password: formData.password,
         })
       } catch (error) {
         if (error.code) {
@@ -140,7 +101,20 @@ export default {
           console.log("Signup error: ", error)
         }
       }
-    }
+    },
+    async signInAnonymously() {
+      this.showError = false
+      try {
+        await this.$store.dispatch('signInAnonymously')
+      } catch (error) {
+        if (error.code) {
+          this.errorMessage = error.message
+          this.showError = true
+        } else {
+          console.log("Signup error: ", error)
+        }
+      }
+    },
   }
 }
 </script>

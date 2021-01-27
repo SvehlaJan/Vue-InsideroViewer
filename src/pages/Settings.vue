@@ -6,7 +6,8 @@
     <b-modal id="modal-location" size="lg" @ok="handleOk" title="Add location">
       <form ref="form" @submit.stop.prevent="handleAddNewLocation">
         <b-form-select v-model="countryForm.selectedItem"
-                       :options="countryForm.items"
+                       :options="locationSearchCountries"
+                       :disabled="!locationSearchCountries"
                        v-on:change="getRegions($event)"
                        class="mb-3">
           <template #first>
@@ -15,8 +16,8 @@
         </b-form-select>
 
         <b-form-select v-model="regionForm.selectedItem"
-                       :options="regionForm.items"
-                       :disabled="countryForm.selectedItem === '' || regionForm.items.length === 0"
+                       :options="locationSearchRegions"
+                       :disabled="countryForm.selectedItem === '' || !locationSearchRegions"
                        class="mb-3">
           <template #first>
             <b-form-select-option :value="''" disabled>-- Please select a region --</b-form-select-option>
@@ -25,18 +26,16 @@
 
         <vue-typeahead-bootstrap
             class="mb-3"
-            :data="cityForm.items"
+            :data="locationSearchCities"
             v-model="cityForm.searchQuery"
-            size="lg"
             :serializer="s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')"
             placeholder="Type a city name..."
             :disabled="regionForm.selectedItem === ''"
             @hit="cityForm.selectedItem = $event"/>
 
         <vue-typeahead-bootstrap
-            :data="neighborhoodForm.items"
+            :data="locationSearchNeighborhoods"
             v-model="neighborhoodForm.searchQuery"
-            size="lg"
             :serializer="s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')"
             placeholder="Type a neighborhood name..."
             :disabled="cityForm.selectedItem === ''"
@@ -44,8 +43,8 @@
       </form>
     </b-modal>
 
-    <b-card title="Profile" class="mt-4">
-      <b-form-group id="input-group-1" label="Insidero API Key" label-for="input-1">
+    <b-card title="Insidero API Key" class="mt-4">
+      <b-form-group id="input-group-1" label-for="input-1" class="mt-4">
         <b-form-input
             id="input-1"
             debounce="1000"
@@ -79,13 +78,53 @@
         location
       </b-button>
     </b-card>
+
+    <b-card v-if="userProfile.isAnonymous" title="Create Account" class="mt-4">
+      <!--      <b-form @submit.prevent="createAccountForAnonymousUser()">-->
+
+      <!--        <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>-->
+      <!--        <b-alert v-model="showError" variant="danger" show>{{ errorMessage }}</b-alert>-->
+
+      <!--        <b-form-group id="input-group-3" label="Email address:" label-for="email2" class="mt-4">-->
+      <!--          <b-form-input-->
+      <!--              id="email2"-->
+      <!--              v-model="loginForm.email"-->
+      <!--              type="email"-->
+      <!--              required-->
+      <!--              placeholder="Enter email">-->
+      <!--          </b-form-input>-->
+      <!--        </b-form-group>-->
+
+      <!--        <b-form-group id="input-group-4" label="Password:" label-for="password2">-->
+      <!--          <b-form-input-->
+      <!--              id="password2"-->
+      <!--              v-model="loginForm.password"-->
+      <!--              type="password"-->
+      <!--              required-->
+      <!--              placeholder="******">-->
+      <!--          </b-form-input>-->
+      <!--        </b-form-group>-->
+
+      <!--        <b-container>-->
+      <!--          <b-row>-->
+      <!--            <b-button type="submit" variant="primary">Register</b-button>-->
+      <!--          </b-row>-->
+      <!--          <b-row class="mt-4">-->
+      <!--            <b-link @click="toggleForm()">Back to Log In</b-link>-->
+      <!--          </b-row>-->
+      <!--        </b-container>-->
+      <!--      </b-form>-->
+    </b-card>
+    <b-card v-else title="Profile" class="mt-4">
+    </b-card>
   </b-container>
 </template>
 
 <script>
-import {mapState} from 'vuex'
+import {mapGetters, mapState} from 'vuex'
 import VueTypeaheadBootstrap from 'vue-typeahead-bootstrap'
 import _ from 'lodash'
+import axios from 'axios'
 
 export default {
   data() {
@@ -94,22 +133,18 @@ export default {
       showSuccess: false,
       newLocationState: {},
       countryForm: {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       },
       regionForm: {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       },
       cityForm: {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       },
       neighborhoodForm: {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       },
@@ -136,7 +171,7 @@ export default {
     VueTypeaheadBootstrap
   },
   computed: {
-    ...mapState(['userProfile']),
+    ...mapState(['userProfile', 'locationSearchCountries', 'locationSearchRegions', 'locationSearchCities', 'locationSearchNeighborhoods']),
     isApiKey() {
       return !_.isEmpty(this.apiKey)
     }
@@ -149,7 +184,6 @@ export default {
       this.getNeighborhoodsDebounced(this.countryForm.selectedItem, this.regionForm.selectedItem, this.cityForm.selectedItem.value, this.neighborhoodForm.searchQuery)
     },
     'userProfile.apiKey': function (newValue, oldValue) {
-      console.log("userProfile.apiKey: ", newValue)
       if (!_.isEmpty(newValue)) {
         if (_.isEmpty(oldValue)) {
           this.apiKey = newValue;
@@ -189,14 +223,17 @@ export default {
       // Trigger submit handler
       this.handleAddNewLocation()
     },
+    createAccountForAnonymousUser(form) {
+
+    },
     handleAddNewLocation() {
       // Exit when the form isn't valid
       if (!this.checkFormValidity()) {
         return
       }
 
-      const selectedCountry = _.find(this.countryForm.items, {value: this.countryForm.selectedItem})
-      const selectedRegion = _.find(this.regionForm.items, {value: this.regionForm.selectedItem})
+      const selectedCountry = _.find(this.locationSearchCountries, {value: this.countryForm.selectedItem})
+      const selectedRegion = _.find(this.locationSearchRegions, {value: this.regionForm.selectedItem})
       this.userProfile.userLocations.push(
           {
             country: selectedCountry,
@@ -208,12 +245,10 @@ export default {
       this.updateProfile();
 
       this.cityForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
       this.neighborhoodForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
@@ -229,121 +264,33 @@ export default {
       this.updateProfile();
     },
     getCountries() {
-      const params = {
-        api_key: this.userProfile.apiKey,
-      }
-      Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
-      const paramsStr = new URLSearchParams(params).toString();
-      this.$axios
-          .get("/countries?" + paramsStr)
-          .then(response => {
-            const countries = Object.values(response.data.results).map(function (country) {
-              return {
-                value: country['general']['id'],
-                text: country['general']['name'],
-              };
-            });
-            // console.log("Countries received: ", countries.length)
-            return (this.countryForm.items = countries);
-          })
-          .catch(err => {
-            console.log(err.response);
-          });
+      this.$store.dispatch('fetchCountries')
     },
     getRegions(country) {
       this.regionForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
       this.cityForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
       this.neighborhoodForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
-
-      const params = {
-        api_key: this.userProfile.apiKey,
-        country: country,
-      }
-      Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
-      const paramsStr = new URLSearchParams(params).toString();
-      this.$axios
-          .get("/regions?" + paramsStr)
-          .then(response => {
-            const regions = Object.values(response.data.results).map(function (region) {
-              return {
-                value: region['general']['id'],
-                text: region['general']['name'],
-              };
-            });
-            // console.log("Regions received: ", regions.length)
-            return (this.regionForm.items = regions);
-          })
-          .catch(err => {
-            console.log(err.response);
-          });
+      this.$store.dispatch('fetchRegions', {country: country})
     },
     getCities(country, region, name) {
       this.neighborhoodForm = {
-        items: [],
         selectedItem: '',
         searchQuery: '',
       };
 
-      const params = {
-        api_key: this.userProfile.apiKey,
-        country: country,
-        region: region,
-        name: name,
-      }
-      Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
-      const paramsStr = new URLSearchParams(params).toString();
-      this.$axios
-          .get("/cities?" + paramsStr)
-          .then(response => {
-            const cities = Object.values(response.data.results).map(function (city) {
-              return {
-                value: city['general']['id'],
-                text: city['general']['name'],
-              };
-            });
-            // console.log("Cities received: ", cities.length)
-            return (this.cityForm.items = cities);
-          })
-          .catch(err => {
-            console.log(err.response);
-          });
+      this.$store.dispatch('fetchCities', {country: country, region: region, name: name,})
     },
     getNeighborhoods(country, region, city, name) {
-      const params = {
-        api_key: this.userProfile.apiKey,
-        country: country,
-        region: region,
-        city: city,
-        name: name,
-      }
-      Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
-      const paramsStr = new URLSearchParams(params).toString();
-      this.$axios
-          .get("/neighborhoods?" + paramsStr)
-          .then(response => {
-            const neighborhoods = Object.values(response.data.results).map(function (neighborhood) {
-              return {
-                value: neighborhood['general']['id'],
-                text: neighborhood['general']['name'],
-              };
-            });
-            return (this.neighborhoodForm.items = neighborhoods);
-          })
-          .catch(err => {
-            console.log(err.response);
-          });
+      this.$store.dispatch('fetchNeighborhoods', {country: country, region: region, city: city, name: name,})
     },
   }
 }
