@@ -45,7 +45,7 @@
 
           <hr class="my-3"/>
 
-          <nav class="mt-4" v-if="isLoggedIn">
+          <nav class="mt-4" v-if="isAuthenticated">
             <b-nav vertical pills>
               <b-nav-item
                   :to="{ path: 'settings' }"
@@ -74,7 +74,6 @@
 
 <script>
 import {mapGetters, mapState} from 'vuex'
-import {auth} from '@/firebase'
 import _ from "lodash";
 
 export default {
@@ -95,10 +94,7 @@ export default {
   },
   computed: {
     ...mapState(['userProfile']),
-    ...mapGetters(['userLocations']),
-    isLoggedIn() {
-      return auth.currentUser != null;
-    },
+    ...mapGetters(['userLocations', 'isAuthenticated', 'isAnonymousUser']),
     hasLocations() {
       return !_.isEmpty(this.userLocations);
     },

@@ -15,6 +15,7 @@ export const store = new Vuex.Store({
         offersLoading: false,
         selectedOffer: {},
 
+
         locationSearchCountries: [],
         locationSearchRegions: [],
         locationSearchCities: [],
@@ -53,7 +54,7 @@ export const store = new Vuex.Store({
         },
         setLocationSearchNeighborhoods(state, val) {
             // console.log("setting location search neighborhoods results:", val)
-            Vue.set(state, 'setLocationSearchNeighborhoods', val)
+            Vue.set(state, 'locationSearchNeighborhoods', val)
         },
     },
     actions: {
@@ -80,18 +81,15 @@ export const store = new Vuex.Store({
             dispatch('fetchUserProfile', user)
         },
         async createAccountForAnonymousUser({dispatch}, form) {
-            const credential = await fb.auth.EmailAuthProvider.credential(form.email, form.password);
-            fb.auth.currentUser.linkWithCredential(credential)
-                .then(function (usercred) {
-                    var user = usercred.user;
-                    console.log("Anonymous account successfully upgraded", user);
-                }).catch(function (error) {
-                console.log("Error upgrading anonymous account", error);
-            });
+            console.log("form: ", form)
+            const credential = fb.authNamespace.EmailAuthProvider.credential(form.email, form.password);
+            console.log("credential: ", credential)
+            const {user} = await fb.auth.currentUser.linkWithCredential(credential)
+            dispatch('fetchUserProfile', user)
         },
         async fetchUserProfile({commit}, user) {
             const userProfile = await fb.usersCollection.doc(user.uid).get()
-            const userAuth = await fb.auth.currentUser;
+            const userAuth = fb.auth.currentUser;
 
             commit('setUserProfile', {...userProfile.data(), isAnonymous: userAuth.isAnonymous})
             if (router.currentRoute.path === '/login') {
@@ -193,6 +191,8 @@ export const store = new Vuex.Store({
         userLocations: state => state.userProfile?.userLocations,
         offersLoading: state => state.offersLoading,
         selectedOffer: state => state.selectedOffer,
+        isAuthenticated: state => state.userProfile != null & fb.auth.currentUser != null,
+        isAnonymousUser: state => state.userProfile != null & fb.auth.currentUser.isAnonymous,
         offers: function (state) {
             if (!state.userProfile?.offersHistory || !state.rawOffers?.offers) {
                 return []
@@ -203,19 +203,15 @@ export const store = new Vuex.Store({
 })
 
 async function fetchLocationSearchData(path, params) {
-    try {
-        Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
-        const paramsStr = new URLSearchParams(params).toString();
-        const response = await axios.get(path + "?" + paramsStr);
-        return Object.values(response.data.results).map(function (item) {
-            return {
-                value: item['general']['id'],
-                text: item['general']['name'],
-            };
-        });
-    } catch (e) {
-        console.error("Location search data error: ", e)
-    }
+    Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
+    const paramsStr = new URLSearchParams(params).toString();
+    const response = await axios.get(path + "?" + paramsStr);
+    return Object.values(response.data.results).map(function (item) {
+        return {
+            value: item['general']['id'],
+            text: item['general']['name'],
+        };
+    });
 }
 
 function parseRawOffers(offersList, offersHistory) {

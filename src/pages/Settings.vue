@@ -1,7 +1,10 @@
 <template>
   <b-container>
 
-    <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>
+    <b-alert class="mt-4" v-model="locationsFormStatus.showSuccess" variant="success" show>Success</b-alert>
+    <b-alert class="mt-4" v-model="locationsFormStatus.showError" variant="danger" show>
+      {{ locationsFormStatus.errorMessage }}
+    </b-alert>
 
     <b-modal id="modal-location" size="lg" @ok="handleOk" title="Add location">
       <form ref="form" @submit.stop.prevent="handleAddNewLocation">
@@ -80,42 +83,17 @@
     </b-card>
 
     <b-card v-if="userProfile.isAnonymous" title="Create Account" class="mt-4">
-      <!--      <b-form @submit.prevent="createAccountForAnonymousUser()">-->
-
-      <!--        <b-alert v-model="showSuccess" variant="success" show>Success</b-alert>-->
-      <!--        <b-alert v-model="showError" variant="danger" show>{{ errorMessage }}</b-alert>-->
-
-      <!--        <b-form-group id="input-group-3" label="Email address:" label-for="email2" class="mt-4">-->
-      <!--          <b-form-input-->
-      <!--              id="email2"-->
-      <!--              v-model="loginForm.email"-->
-      <!--              type="email"-->
-      <!--              required-->
-      <!--              placeholder="Enter email">-->
-      <!--          </b-form-input>-->
-      <!--        </b-form-group>-->
-
-      <!--        <b-form-group id="input-group-4" label="Password:" label-for="password2">-->
-      <!--          <b-form-input-->
-      <!--              id="password2"-->
-      <!--              v-model="loginForm.password"-->
-      <!--              type="password"-->
-      <!--              required-->
-      <!--              placeholder="******">-->
-      <!--          </b-form-input>-->
-      <!--        </b-form-group>-->
-
-      <!--        <b-container>-->
-      <!--          <b-row>-->
-      <!--            <b-button type="submit" variant="primary">Register</b-button>-->
-      <!--          </b-row>-->
-      <!--          <b-row class="mt-4">-->
-      <!--            <b-link @click="toggleForm()">Back to Log In</b-link>-->
-      <!--          </b-row>-->
-      <!--        </b-container>-->
-      <!--      </b-form>-->
+      <p>Your locations and favorite offers will be saved.</p>
+      <EmailCredentialsForm
+          @submitForm="createAccountForAnonymousUser"
+          :error-message="accountFormStatus.errorMessage"
+          :show-error="accountFormStatus.showError"
+          :show-success="accountFormStatus.showSuccess"
+          submit-button-label="Login"/>
     </b-card>
     <b-card v-else title="Profile" class="mt-4">
+      <b-alert v-model="accountFormStatus.showSuccess" variant="success" show>Success</b-alert>
+      <b-alert v-model="accountFormStatus.showError" variant="danger" show>{{ accountFormStatus.errorMessage }}</b-alert>
     </b-card>
   </b-container>
 </template>
@@ -124,13 +102,22 @@
 import {mapGetters, mapState} from 'vuex'
 import VueTypeaheadBootstrap from 'vue-typeahead-bootstrap'
 import _ from 'lodash'
-import axios from 'axios'
+import EmailCredentialsForm from "@/components/EmailCredentialsForm";
 
 export default {
   data() {
     return {
-      isLoading: false,
-      showSuccess: false,
+      locationsFormStatus: {
+        showSuccess: false,
+        showError: false,
+        errorMessage: '',
+      },
+      accountFormStatus: {
+        showSuccess: false,
+        showError: false,
+        errorMessage: '',
+      },
+      pendingApiKeyTest: false,
       newLocationState: {},
       countryForm: {
         selectedItem: '',
@@ -168,7 +155,8 @@ export default {
     }
   },
   components: {
-    VueTypeaheadBootstrap
+    VueTypeaheadBootstrap,
+    EmailCredentialsForm,
   },
   computed: {
     ...mapState(['userProfile', 'locationSearchCountries', 'locationSearchRegions', 'locationSearchCities', 'locationSearchNeighborhoods']),
@@ -194,23 +182,18 @@ export default {
     },
     'apiKey': function (newValue, oldValue) {
       if (this.userProfile?.apiKey != newValue) {
+        this.pendingApiKeyTest = true
         this.updateProfile();
       }
     },
   },
   methods: {
-    updateProfile() {
-      this.$store.dispatch('updateProfile', {
+    async updateProfile() {
+      await this.$store.dispatch('updateProfile', {
         apiKey: this.apiKey || "",
         userLocations: this.userProfile.userLocations || [],
         offersHistory: this.userProfile.offersHistory || [],
       })
-
-      this.showSuccess = true
-
-      setTimeout(() => {
-        this.showSuccess = false
-      }, 2000)
     },
     checkFormValidity() {
       const valid = this.$refs.form.checkValidity()
@@ -223,10 +206,26 @@ export default {
       // Trigger submit handler
       this.handleAddNewLocation()
     },
-    createAccountForAnonymousUser(form) {
+    async createAccountForAnonymousUser(formData) {
+      console.log("formData: ", formData)
+      try {
+        await this.$store.dispatch('createAccountForAnonymousUser', {
+          email: formData.email,
+          password: formData.password,
+        })
 
+        this.accountFormStatus.showError = false
+        this.accountFormStatus.showSuccess = true
+      } catch (error) {
+        if (error.code) {
+          this.accountFormStatus.errorMessage = error.message
+          this.accountFormStatus.showError = true
+        } else {
+          console.error("Create account error: ", error)
+        }
+      }
     },
-    handleAddNewLocation() {
+    async handleAddNewLocation() {
       // Exit when the form isn't valid
       if (!this.checkFormValidity()) {
         return
@@ -242,7 +241,7 @@ export default {
             neighborhood: this.neighborhoodForm.selectedItem,
           }
       );
-      this.updateProfile();
+      await this.updateProfile();
 
       this.cityForm = {
         selectedItem: '',
@@ -258,39 +257,62 @@ export default {
         this.$bvModal.hide('modal-location')
       })
     },
-    handleDeleteLocation(location) {
+    async handleDeleteLocation(location) {
       const index = this.userProfile.userLocations.indexOf(location);
       this.userProfile.userLocations.splice(index, 1)
-      this.updateProfile();
+      await this.updateProfile();
     },
-    getCountries() {
-      this.$store.dispatch('fetchCountries')
-    },
-    getRegions(country) {
-      this.regionForm = {
-        selectedItem: '',
-        searchQuery: '',
-      };
-      this.cityForm = {
-        selectedItem: '',
-        searchQuery: '',
-      };
-      this.neighborhoodForm = {
-        selectedItem: '',
-        searchQuery: '',
-      };
-      this.$store.dispatch('fetchRegions', {country: country})
-    },
-    getCities(country, region, name) {
-      this.neighborhoodForm = {
-        selectedItem: '',
-        searchQuery: '',
-      };
+    async getCountries() {
+      this.resetForm(this.countryForm)
+      this.resetForm(this.regionForm)
+      this.resetForm(this.cityForm)
+      this.resetForm(this.neighborhoodForm)
 
-      this.$store.dispatch('fetchCities', {country: country, region: region, name: name,})
+      try {
+        await this.$store.dispatch('fetchCountries')
+
+        if (this.pendingApiKeyTest) {
+          this.pendingApiKeyTest = false;
+          this.locationsFormStatus.showSuccess = true;
+          this.locationsFormStatus.showError = false;
+          setTimeout(() => {
+            this.locationsFormStatus.showSuccess = false;
+          }, 2000);
+        }
+      } catch (error) {
+        if (error.response) {
+          if (error.response.data?.error?.message) {
+            this.locationsFormStatus.errorMessage = error.response.data?.error?.message
+            this.locationsFormStatus.showError = true
+          } else {
+            this.locationsFormStatus.errorMessage = `Error code: ${error.response.status}, message : ${error.response.statusText}`
+            this.locationsFormStatus.showError = true
+          }
+        } else {
+          console.error("Countries fetch error: ", error)
+        }
+      }
     },
-    getNeighborhoods(country, region, city, name) {
-      this.$store.dispatch('fetchNeighborhoods', {country: country, region: region, city: city, name: name,})
+    async getRegions(country) {
+      this.resetForm(this.regionForm)
+      this.resetForm(this.cityForm)
+      this.resetForm(this.neighborhoodForm)
+
+      await this.$store.dispatch('fetchRegions', {country: country})
+    },
+    async getCities(country, region, name) {
+      this.resetForm(this.neighborhoodForm)
+
+      await this.$store.dispatch('fetchCities', {country: country, region: region, name: name,})
+    },
+    async getNeighborhoods(country, region, city, name) {
+      await this.$store.dispatch('fetchNeighborhoods', {country: country, region: region, city: city, name: name,})
+    },
+    resetForm(form) {
+      form = {
+        selectedItem: '',
+        searchQuery: '',
+      }
     },
   }
 }

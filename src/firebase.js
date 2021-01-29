@@ -18,6 +18,7 @@ firebase.initializeApp(firebaseConfig)
 // utils
 const db = firebase.firestore()
 const auth = firebase.auth()
+const authNamespace = firebase.auth
 
 // collection references
 const usersCollection = db.collection('users')
@@ -26,5 +27,6 @@ const usersCollection = db.collection('users')
 export {
   db,
   auth,
+  authNamespace,
   usersCollection,
 }

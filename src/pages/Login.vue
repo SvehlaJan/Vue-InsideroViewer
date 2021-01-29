@@ -82,7 +82,7 @@ export default {
           this.errorMessage = error.message
           this.showError = true
         } else {
-          console.log("Login error: ", error)
+          console.error("Login error: ", error)
         }
       }
     },
@@ -98,7 +98,7 @@ export default {
           this.errorMessage = error.message
           this.showError = true
         } else {
-          console.log("Signup error: ", error)
+          console.error("Signup error: ", error)
         }
       }
     },
@@ -111,7 +111,7 @@ export default {
           this.errorMessage = error.message
           this.showError = true
         } else {
-          console.log("Signup error: ", error)
+          console.error("Anonymous signup error: ", error)
         }
       }
     },
