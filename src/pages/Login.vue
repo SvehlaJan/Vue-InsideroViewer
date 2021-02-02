@@ -1,6 +1,19 @@
 <template>
   <div>
     <b-container v-if="showLoginForm">
+<!--      <PasswordReset v-if="showPasswordReset" @close="togglePasswordReset()"></PasswordReset>-->
+      <b-modal id="modal-location" size="lg" title="Reset password" @ok="handleResetPassword">
+        <form ref="form" @submit.stop.prevent="handleResetPassword">
+          <b-form-input
+              id="input-password-reset"
+              type="email"
+              placeholder="Your email"
+              v-model="passwordResetEmail"
+              required>
+          </b-form-input>
+        </form>
+      </b-modal>
+
       <h1 class="mt-4">Welcome</h1>
 
       <EmailCredentialsForm
@@ -11,7 +24,7 @@
           submit-button-label="Login"/>
 
       <div class="mt-2">
-        <b-link @click="togglePasswordReset()">Forgot Password</b-link>
+        <b-link v-b-modal="'modal-location'">Forgot Password</b-link>
       </div>
 
       <h3 class="mt-5">New here?</h3>
@@ -21,8 +34,6 @@
         /
         <b-link class="ml-2" @click="signInAnonymously()">Sign in as guest</b-link>
       </b-container>
-
-      <PasswordReset v-if="showPasswordReset" @close="togglePasswordReset()"></PasswordReset>
     </b-container>
 
     <b-container v-else>
@@ -43,18 +54,17 @@
 </template>
 
 <script>
-import PasswordReset from '@/components/PasswordReset'
 import EmailCredentialsForm from "@/components/EmailCredentialsForm";
+import {auth} from "@/firebase";
 
 export default {
   components: {
-    PasswordReset,
     EmailCredentialsForm,
   },
   data() {
     return {
       showLoginForm: true,
-      showPasswordReset: false,
+      passwordResetEmail: '',
       showSuccess: false,
       showError: false,
       errorMessage: '',
@@ -64,11 +74,6 @@ export default {
     toggleForm() {
       this.showLoginForm = !this.showLoginForm
       this.showError = false
-    },
-    togglePasswordReset() {
-      this.showPasswordReset = !this.showPasswordReset
-      this.showError = false
-      console.log("showPasswordReset: ", this.showPasswordReset)
     },
     async signInWithEmailAndPassword(formData) {
       this.showError = false
@@ -115,6 +120,17 @@ export default {
         }
       }
     },
+    async handleResetPassword() {
+      this.errorMessage = '';
+
+      try {
+        await auth.sendPasswordResetEmail(this.email);
+        this.showSuccess = true;
+      } catch (err) {
+        this.showError = true;
+        this.errorMessage = err.message;
+      }
+    }
   }
 }
 </script>

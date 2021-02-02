@@ -81,11 +81,15 @@ export const store = new Vuex.Store({
             dispatch('fetchUserProfile', user)
         },
         async createAccountForAnonymousUser({dispatch}, form) {
-            console.log("form: ", form)
             const credential = fb.authNamespace.EmailAuthProvider.credential(form.email, form.password);
-            console.log("credential: ", credential)
             const {user} = await fb.auth.currentUser.linkWithCredential(credential)
             dispatch('fetchUserProfile', user)
+        },
+        async changeUserPassword({dispatch, state}, form) {
+            const credential = fb.authNamespace.EmailAuthProvider.credential(fb.auth.currentUser.email, form.currentPassword)
+            await fb.auth.currentUser.reauthenticateWithCredential(credential)
+
+            // await fb.auth.currentUser.updatePassword(form.newPassword)
         },
         async fetchUserProfile({commit}, user) {
             const userProfile = await fb.usersCollection.doc(user.uid).get()

@@ -35,43 +35,75 @@
     </template>
 
     <template #row-details="row">
-      <b-card>
-        <b-row no-gutters>
-          <b-col md="6">
-            <b-card-body title="Urls">
-              <b-table :items="row.item.urls" thead-class="hidden_header">
-                <template #cell(url)="data">
-                  <b-link target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{ data.value }}</b-link>
-                </template>
-              </b-table>
-            </b-card-body>
-          </b-col>
-          <b-col v-if="row.item.prices" md="6">
-            <b-card-body title="Prices">
-              <b-table :items="row.item.prices" thead-class="hidden_header"></b-table>
-            </b-card-body>
-          </b-col>
-          <b-col v-if="row.item.updates" md="6">
-            <b-card-body title="Updates">
-              <b-table :items="row.item.updates" thead-class="hidden_header"></b-table>
-            </b-card-body>
-          </b-col>
-          <b-col md="6">
+      <!--      <b-row cols="2">-->
+      <!--        <b-col no-gutters v-if="row.item.urls">-->
+      <!--          <b-card title="Urls">-->
+      <!--            <b-table :items="row.item.urls" thead-class="hidden_header">-->
+      <!--              <template #cell(url)="data">-->
+      <!--                <b-link target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{ data.value }}</b-link>-->
+      <!--              </template>-->
+      <!--            </b-table>-->
+      <!--          </b-card>-->
+      <!--        </b-col>-->
+      <!--        <b-col no-gutters v-if="row.item.prices">-->
+      <!--          <b-card title="Prices">-->
+      <!--            <b-table :items="row.item.prices" thead-class="hidden_header"></b-table>-->
+      <!--          </b-card>-->
+      <!--        </b-col>-->
+      <!--        <b-col no-gutters v-if="row.item.updates">-->
+      <!--          <b-card title="Updates">-->
+      <!--            <b-table :items="row.item.updates" thead-class="hidden_header"></b-table>-->
+      <!--          </b-card>-->
+      <!--        </b-col>-->
+      <!--        <b-col no-gutters>-->
+      <!--          <b-card>-->
+      <!--            <b-aspect aspect="10:7">-->
+      <!--              <GmapMap-->
+      <!--                  :center="row.item.marker.position"-->
+      <!--                  :zoom="11"-->
+      <!--                  :options="{-->
+      <!--                      gestureHandling: 'greedy',-->
+      <!--                    }"-->
+      <!--                  map-type-id="terrain"-->
+      <!--                  style="width: 100%; height: 100%">-->
+      <!--                <GmapMarker-->
+      <!--                    :key="row.item.id"-->
+      <!--                    :position="row.item.marker.position"/>-->
+      <!--              </GmapMap>-->
+      <!--            </b-aspect>-->
+      <!--          </b-card>-->
+      <!--        </b-col>-->
+      <!--      </b-row>-->
+
+      <b-card-group columns>
+        <b-card title="Urls" v-if="row.item.urls">
+          <b-table :items="row.item.urls" thead-class="hidden_header">
+            <template #cell(url)="data">
+              <b-link target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{ data.value }}</b-link>
+            </template>
+          </b-table>
+        </b-card>
+        <b-card title="Prices" v-if="row.item.prices">
+          <b-table :items="row.item.prices" thead-class="hidden_header"></b-table>
+        </b-card>
+        <b-card title="Updates" v-if="row.item.updates">
+          <b-table :items="row.item.updates" thead-class="hidden_header"></b-table>
+        </b-card>
+        <b-card>
+          <b-aspect aspect="10:7">
             <GmapMap
                 :center="row.item.marker.position"
                 :zoom="11"
-                :options="{
-                      gestureHandling: 'greedy',
-                    }"
+                :options="{gestureHandling: 'greedy'}"
                 map-type-id="terrain"
-                style="width: 500px; height: 300px">
+                style="width: 100%; height: 100%">
               <GmapMarker
                   :key="row.item.id"
                   :position="row.item.marker.position"/>
             </GmapMap>
-          </b-col>
-        </b-row>
-      </b-card>
+          </b-aspect>
+        </b-card>
+      </b-card-group>
     </template>
   </b-table>
 </template>

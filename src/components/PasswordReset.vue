@@ -1,8 +1,6 @@
 <template>
-  <div class="modal">
-    <div class="modal-content">
+    <b-modal title="Reset Password">
       <div @click="$emit('close')" class="close">close</div>
-      <h3>Reset Password</h3>
       <div v-if="!showSuccess">
         <p>Enter your email to reset your password</p>
         <form @submit.prevent>
@@ -12,8 +10,7 @@
         <button @click="resetPassword()" class="button">Reset</button>
       </div>
       <p v-else>Success! Check your email for a reset link.</p>
-    </div>
-  </div>
+    </b-modal>
 </template>
 
 <script>

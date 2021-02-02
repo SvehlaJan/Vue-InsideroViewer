@@ -50,15 +50,13 @@
       <b-form-group id="input-group-1" label-for="input-1" class="mt-4">
         <b-form-input
             id="input-1"
-            debounce="1000"
             type="text"
             v-model="apiKey"
             required>
         </b-form-input>
         <div>
           <p>You can get one from
-            <b-link target="_blank" rel="noopener noreferrer" href="https://www.insidero.com/registrace">Insidero
-            </b-link>
+            <b-link target="_blank" rel="noopener noreferrer" href="https://www.insidero.com/registrace">Insidero</b-link>.
           </p>
         </div>
       </b-form-group>
@@ -77,9 +75,7 @@
           {{ data.value.text }}
         </template>
       </b-table>
-      <b-button v-b-modal="'modal-location'" :disabled="!isApiKey" variant="primary">Add
-        location
-      </b-button>
+      <b-button v-b-modal="'modal-location'" :disabled="!isApiKey" variant="primary">Add location</b-button>
     </b-card>
 
     <b-card v-if="userProfile.isAnonymous" title="Create Account" class="mt-4">
@@ -89,11 +85,15 @@
           :error-message="accountFormStatus.errorMessage"
           :show-error="accountFormStatus.showError"
           :show-success="accountFormStatus.showSuccess"
-          submit-button-label="Login"/>
+          submit-button-label="Register"/>
     </b-card>
     <b-card v-else title="Profile" class="mt-4">
-      <b-alert v-model="accountFormStatus.showSuccess" variant="success" show>Success</b-alert>
-      <b-alert v-model="accountFormStatus.showError" variant="danger" show>{{ accountFormStatus.errorMessage }}</b-alert>
+      <ChangePasswordForm
+          @submitForm="changeUserPassword"
+          :error-message="accountFormStatus.errorMessage"
+          :show-error="accountFormStatus.showError"
+          :show-success="accountFormStatus.showSuccess"
+          submit-button-label="Change password"/>
     </b-card>
   </b-container>
 </template>
@@ -103,6 +103,7 @@ import {mapGetters, mapState} from 'vuex'
 import VueTypeaheadBootstrap from 'vue-typeahead-bootstrap'
 import _ from 'lodash'
 import EmailCredentialsForm from "@/components/EmailCredentialsForm";
+import ChangePasswordForm from "@/components/ChangePasswordForm";
 
 export default {
   data() {
@@ -157,6 +158,7 @@ export default {
   components: {
     VueTypeaheadBootstrap,
     EmailCredentialsForm,
+    ChangePasswordForm,
   },
   computed: {
     ...mapState(['userProfile', 'locationSearchCountries', 'locationSearchRegions', 'locationSearchCities', 'locationSearchNeighborhoods']),
@@ -207,7 +209,6 @@ export default {
       this.handleAddNewLocation()
     },
     async createAccountForAnonymousUser(formData) {
-      console.log("formData: ", formData)
       try {
         await this.$store.dispatch('createAccountForAnonymousUser', {
           email: formData.email,
@@ -219,6 +220,28 @@ export default {
       } catch (error) {
         if (error.code) {
           this.accountFormStatus.errorMessage = error.message
+          this.accountFormStatus.showError = true
+        } else {
+          console.error("Create account error: ", error)
+        }
+      }
+    },
+    async changeUserPassword(formData) {
+      try {
+        await this.$store.dispatch('changeUserPassword', {
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword,
+        })
+
+        this.accountFormStatus.showError = false
+        this.accountFormStatus.showSuccess = true
+      } catch (error) {
+        if (error.code) {
+          if (error.code === "auth/wrong-password") {
+            this.accountFormStatus.errorMessage = "Current password is invalid or the user does not have a password.";
+          } else {
+            this.accountFormStatus.errorMessage = error.message;
+          }
           this.accountFormStatus.showError = true
         } else {
           console.error("Create account error: ", error)

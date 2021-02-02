@@ -3,20 +3,20 @@
     <b-alert v-model="intShowSuccess" variant="success" show>Success</b-alert>
     <b-alert v-model="intShowError" variant="danger" show>{{ errorMessage }}</b-alert>
 
-    <b-form-group id="input-group-1" label="Email address:" label-for="email1" class="mt-4">
+    <b-form-group id="input-group-1" label="Current password:" label-for="password1" class="mt-4">
       <b-form-input
-          id="email1"
-          v-model="formData.email"
-          type="email"
+          id="password1"
+          v-model="formData.currentPassword"
+          type="password"
           required
-          placeholder="your@email.com">
+          placeholder="******">
       </b-form-input>
     </b-form-group>
 
-    <b-form-group id="input-group-2" label="Password:" label-for="password1">
+    <b-form-group id="input-group-2" label="New password:" label-for="password2">
       <b-form-input
-          id="password1"
-          v-model="formData.password"
+          id="password2"
+          v-model="formData.newPassword"
           type="password"
           required
           placeholder="******">
@@ -35,8 +35,8 @@ export default {
   data() {
     return {
       formData: {
-        email: '',
-        password: '',
+        currentPassword: '',
+        newPassword: '',
       },
       intShowSuccess: false,
       intShowError: false,

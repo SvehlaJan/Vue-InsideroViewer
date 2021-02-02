@@ -130,18 +130,18 @@ export default {
     navigateToSelectedOfferNextUrl(offer) {
 
     },
-    toggleFavorite(offer) {
+    async toggleFavorite(offer) {
       const newValue = (offer.category === 1) ? 0 : 1;
-      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
-      this.closeModal()
+      await this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
+      await this.closeModal()
     },
-    toggleArchive(offer) {
+    async toggleArchive(offer) {
       const newValue = (offer.category === 10) ? 0 : 10;
-      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
-      this.closeModal()
+      await this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
+      await this.closeModal()
     },
-    closeModal() {
-      this.$store.dispatch('setSelectedOffer', null)
+    async closeModal() {
+      await this.$store.dispatch('setSelectedOffer', null)
     },
   }
 }
