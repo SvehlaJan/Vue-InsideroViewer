@@ -80,7 +80,7 @@ export default {
       await this.$store.dispatch('fetchOffers', to.query)
     },
     userProfile: async function (newValue, oldValue) {
-      if (newValue != null) {
+      if (newValue != null && !this.offers) {
         await this.$store.dispatch('fetchOffers', this.$route.query)
       }
     },

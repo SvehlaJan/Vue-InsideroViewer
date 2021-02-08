@@ -3,7 +3,7 @@ import App from './App.vue'
 import {store} from './store'
 import {router} from './router'
 import {auth} from './firebase'
-import * as VueGoogleMaps from 'vue2-google-maps'
+import * as VueGoogleMaps from 'gmap-vue'
 import {BootstrapVue, BootstrapVueIcons} from 'bootstrap-vue'
 import '@/assets/custom.scss'
 import axios from "axios";

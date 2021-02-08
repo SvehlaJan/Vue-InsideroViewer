@@ -1,7 +1,6 @@
 <template>
   <div>
     <b-container v-if="showLoginForm">
-<!--      <PasswordReset v-if="showPasswordReset" @close="togglePasswordReset()"></PasswordReset>-->
       <b-modal id="modal-location" size="lg" title="Reset password" @ok="handleResetPassword">
         <form ref="form" @submit.stop.prevent="handleResetPassword">
           <b-form-input
@@ -32,7 +31,7 @@
       <b-container class="p-0 mt-2">
         <b-link class="mr-2" @click="toggleForm()">Create an Account</b-link>
         /
-        <b-link class="ml-2" @click="signInAnonymously()">Sign in as guest</b-link>
+        <b-link class="ml-2" @click="signInAnonymously()">Anonymous Login</b-link>
       </b-container>
     </b-container>
 

@@ -11,6 +11,7 @@ Vue.use(Vuex)
 export const store = new Vuex.Store({
     state: {
         userProfile: {},
+        allRawOffers: {},
         rawOffers: {offers: {}},
         offersLoading: false,
         selectedOffer: {},
@@ -143,16 +144,15 @@ export const store = new Vuex.Store({
                 }
                 Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
                 const paramsStr = new URLSearchParams(params).toString();
-                let url = "/offers?" + paramsStr
-                console.log("Fetching offers from: ", url)
-                axios.get(url)
-                    .then(response => {
-                        console.log("New offers received: ", Object.keys(response['data']['results']).length)
-                        commit('setRawOffers', {offers: response['data']['results']})
-                    })
-                    .catch(err => {
-                        console.log(err.response);
-                    }).finally(() => commit('setOffersLoading', false));
+                let url = "/offers?" + paramsStr;
+                console.log("Fetching offers from: ", url);
+                try {
+                    const response = await axios.get(url);
+                    console.log("New offers received: ", Object.keys(response['data']['results']).length)
+                    commit('setRawOffers', {offers: response['data']['results']})
+                } finally {
+                    commit('setOffersLoading', false)
+                }
             }
         },
         async fetchCountries({commit, state}) {

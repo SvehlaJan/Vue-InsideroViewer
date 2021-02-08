@@ -68,12 +68,19 @@ router.beforeEach((to, from, next) => {
                     region: firstLocation.region?.value,
                     city: firstLocation.city?.value,
                     neighborhood: firstLocation.neighborhood?.value,
-                    active: "true",
                 },
             })
         } else {
             next('/settings')
         }
+    } else if (to.path === '/offers' && (!to.query.active || !to.query.type)) {
+        let query = to.query
+        query["active"] = query.active || "true"
+        query["type"] = query.type || "house"
+        next({
+            path: to.path,
+            query: query,
+        })
     } else {
         next()
     }
