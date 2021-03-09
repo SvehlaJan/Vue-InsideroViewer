@@ -3,7 +3,7 @@
     <b-sidebar id="sidebar-nav"
                backdrop-variant="dark"
                no-close-on-route-change
-               title="Your Locations"
+               title="Insidero Viewer"
                shadow>
       <template>
         <div class="p-2">

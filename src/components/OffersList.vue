@@ -9,14 +9,14 @@
 
       <template #modal-footer="">
         <b-button v-if="selectedOffer != null"
-                  :variant="selectedOffer.archived.value ? 'dark' : 'outline-dark'"
+                  :variant="selectedOffer.archived ? 'dark' : 'outline-dark'"
                   size="sm"
                   @click="toggleArchive(selectedOffer)">
           <b-icon icon="archive"></b-icon>
         </b-button>
 
         <b-button v-if="selectedOffer != null"
-                  :variant="selectedOffer.favorite.value ? 'primary' : 'outline-primary'"
+                  :variant="selectedOffer.favorite ? 'primary' : 'outline-primary'"
                   size="sm"
                   @click="toggleFavorite(selectedOffer)">
           <b-icon icon="heart"></b-icon>
@@ -72,6 +72,26 @@ export default {
       selectedOfferUrl: "",
     }
   },
+  computed: {
+    ...mapState(['userProfile']),
+    ...mapGetters(['offers', 'offersLoading', 'selectedOffer']),
+
+    favorites: function () {
+      return _.filter(this.offers, function (o) {
+        return o.favorite
+      });
+    },
+    archived: function () {
+      return _.filter(this.offers, function (o) {
+        return o.archived
+      });
+    },
+    untagged: function () {
+      return _.filter(this.offers, function (o) {
+        return (!o.favorite && !o.archived)
+      });
+    }
+  },
   async mounted() {
     await this.$store.dispatch('fetchOffers', this.$route.query)
   },
@@ -99,26 +119,6 @@ export default {
         this.$bvModal.hide('modalEmbed');
       }
     },
-  },
-  computed: {
-    ...mapState(['userProfile']),
-    ...mapGetters(['offers', 'offersLoading', 'selectedOffer']),
-
-    favorites: function () {
-      return _.filter(this.offers, function (o) {
-        return o.favorite
-      });
-    },
-    archived: function () {
-      return _.filter(this.offers, function (o) {
-        return o.archived
-      });
-    },
-    untagged: function () {
-      return _.filter(this.offers, function (o) {
-        return (!o.favorite && !o.archived)
-      });
-    }
   },
   methods: {
     hasSelectedOfferMoreUrls(offer) {
