@@ -2,7 +2,7 @@
   <div>
     <b-sidebar id="sidebar-nav"
                backdrop-variant="dark"
-               no-close-on-route-change
+               :no-close-on-route-change="!this.$isMobile()"
                title="Insidero Viewer"
                shadow>
       <template>

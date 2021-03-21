@@ -56,19 +56,31 @@
         </b-form-input>
         <div>
           <p>You can get one from
-            <b-link target="_blank" rel="noopener noreferrer" href="https://www.insidero.com/registrace">Insidero</b-link>.
+            <b-link target="_blank" rel="noopener noreferrer" href="https://www.insidero.com/registrace">Insidero
+            </b-link>
+            .
           </p>
         </div>
       </b-form-group>
     </b-card>
 
     <b-card title="Locations" class="mt-4">
-      <b-table :items="userProfile.userLocations || []"
-               :fields="['country', 'region', 'city', 'neighborhood', 'delete']">
+      <b-table :items="userLocations || []"
+               :fields="['country', 'region', 'city', 'neighborhood', 'delete', 'order']"
+               sort-by="order">
         <template #cell(delete)="data">
           <b-button size="sm" @click="handleDeleteLocation(data.item)">
             Delete
           </b-button>
+        </template>
+
+        <template #cell(order)="data">
+          <b-form-spinbutton id="order"
+                             v-model="data.value"
+                             min="0"
+                             :max="userLocations.length - 1"
+                             @change="onOrderChanged(data.item, $event)"
+                             inline/>
         </template>
 
         <template #cell()="data">
@@ -162,6 +174,7 @@ export default {
   },
   computed: {
     ...mapState(['userProfile', 'locationSearchCountries', 'locationSearchRegions', 'locationSearchCities', 'locationSearchNeighborhoods']),
+    ...mapGetters(['userLocations']),
     isApiKey() {
       return !_.isEmpty(this.apiKey)
     }
@@ -207,6 +220,14 @@ export default {
       bvModalEvt.preventDefault()
       // Trigger submit handler
       this.handleAddNewLocation()
+    },
+    async onOrderChanged(item, newIndex) {
+      const locations = this.userProfile.userLocations.sort((a, b) => a.order - b.order)
+      const origItemIndex = item.order
+      locations[origItemIndex]["order"] = newIndex
+      locations[newIndex]["order"] = origItemIndex
+      this.userProfile.userLocations = locations
+      await this.updateProfile();
     },
     async createAccountForAnonymousUser(formData) {
       try {
@@ -256,12 +277,14 @@ export default {
 
       const selectedCountry = _.find(this.locationSearchCountries, {value: this.countryForm.selectedItem})
       const selectedRegion = _.find(this.locationSearchRegions, {value: this.regionForm.selectedItem})
+      const order = this.userProfile.userLocations.length
       this.userProfile.userLocations.push(
           {
             country: selectedCountry,
             region: selectedRegion,
             city: this.cityForm.selectedItem,
             neighborhood: this.neighborhoodForm.selectedItem,
+            order: order,
           }
       );
       await this.updateProfile();

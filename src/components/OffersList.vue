@@ -106,12 +106,14 @@ export default {
     },
     selectedOffer: async function (newValue, oldValue) {
       if (newValue != null) {
-        for (let url of newValue.urls) {
-          let domain = (new URL(url.url));
-          if (domain.hostname.replace("www.", "") === "sreality.cz") {
-            this.selectedOfferUrl = url.url;
-            this.$bvModal.show('modalEmbed');
-            return;
+        if (!this.$isMobile()) {
+          for (let url of newValue.urls) {
+            let domain = (new URL(url.url));
+            if (domain.hostname.replace("www.", "") === "sreality.cz") {
+              this.selectedOfferUrl = url.url;
+              this.$bvModal.show('modalEmbed');
+              return;
+            }
           }
         }
         window.open(newValue.urls[0].url, '_blank');

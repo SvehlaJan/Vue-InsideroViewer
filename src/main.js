@@ -4,6 +4,7 @@ import {store} from './store'
 import {router} from './router'
 import {auth} from './firebase'
 import * as VueGoogleMaps from 'gmap-vue'
+import VueMobileDetection from "vue-mobile-detection";
 import {BootstrapVue, BootstrapVueIcons} from 'bootstrap-vue'
 import '@/assets/custom.scss'
 import axios from "axios";
@@ -21,6 +22,8 @@ Vue.use(VueGoogleMaps, {
 
 axios.defaults.baseURL = 'https://api.insidero.com/v3'
 axios.defaults.timeout = 30000
+
+Vue.use(VueMobileDetection);
 
 Vue.use(VueLodash, {lodash: lodash})
 

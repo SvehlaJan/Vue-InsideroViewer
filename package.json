@@ -12,13 +12,14 @@
     "bootstrap-vue": "2.21.2",
     "core-js": "3.8.3",
     "firebase": "8.2.4",
+    "gmap-vue": "^1.5.0",
     "google-maps-api-loader": "^1.1.1",
     "lodash": "^4.17.20",
     "vue": "^2.6.11",
     "vue-lodash": "^2.1.2",
+    "vue-mobile-detection": "^1.0.0",
     "vue-router": "^3.4.9",
     "vue-typeahead-bootstrap": "2.7.2",
-    "gmap-vue": "^1.5.0",
     "vuex": "^3.6.0"
   },
   "devDependencies": {
