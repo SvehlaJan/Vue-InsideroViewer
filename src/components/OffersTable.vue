@@ -7,6 +7,7 @@
            ref="table"
            selectable
            select-mode="single"
+           @row-clicked="item=>$set(item, '_showDetails', !item._showDetails)"
            small
            hover
            striped
@@ -28,12 +29,6 @@
                 :variant="data.item.archived ? 'dark' : 'outline-dark'"
                 @click="toggleArchive(data.item)">
         <b-icon icon="archive"></b-icon>
-      </b-button>
-
-      <b-button size="sm"
-                class="ml-2"
-                @click="showDetails(data)">
-        {{ data.detailsShowing ? 'Less' : 'More' }}
       </b-button>
     </template>
 
@@ -78,36 +73,6 @@
           </b-card>
         </b-col>
       </b-row>
-
-      <!--      <b-card-group columns>-->
-      <!--        <b-card title="Urls" v-if="row.item.urls">-->
-      <!--          <b-table :items="row.item.urls" thead-class="hidden_header">-->
-      <!--            <template #cell(url)="data">-->
-      <!--              <b-link target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{ data.value }}</b-link>-->
-      <!--            </template>-->
-      <!--          </b-table>-->
-      <!--        </b-card>-->
-      <!--        <b-card title="Prices" v-if="row.item.prices">-->
-      <!--          <b-table :items="row.item.prices" thead-class="hidden_header"></b-table>-->
-      <!--        </b-card>-->
-      <!--        <b-card title="Updates" v-if="row.item.updates">-->
-      <!--          <b-table :items="row.item.updates" thead-class="hidden_header"></b-table>-->
-      <!--        </b-card>-->
-      <!--        <b-card>-->
-      <!--          <b-aspect aspect="10:7">-->
-      <!--            <GmapMap-->
-      <!--                :center="row.item.marker.position"-->
-      <!--                :zoom="11"-->
-      <!--                :options="{gestureHandling: 'greedy'}"-->
-      <!--                map-type-id="terrain"-->
-      <!--                style="width: 500px; height: 300px;">-->
-      <!--              <GmapMarker-->
-      <!--                  :key="row.item.id"-->
-      <!--                  :position="row.item.marker.position"/>-->
-      <!--            </GmapMap>-->
-      <!--          </b-aspect>-->
-      <!--        </b-card>-->
-      <!--      </b-card-group>-->
     </template>
   </b-table>
 </template>
@@ -131,10 +96,6 @@ export default {
     }
   },
   methods: {
-    showDetails(row) {
-      row.toggleDetails();
-      this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(row.item))
-    },
     showEmbeddedPage(offer) {
       this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(offer))
       this.$store.dispatch('setSelectedOffer', offer)

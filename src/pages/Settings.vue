@@ -75,12 +75,19 @@
         </template>
 
         <template #cell(order)="data">
-          <b-form-spinbutton id="order"
-                             v-model="data.value"
-                             min="0"
-                             :max="userLocations.length - 1"
-                             @change="onOrderChanged(data.item, $event)"
-                             inline/>
+          <b-button size="sm"
+                    class="ml-2"
+                    :variant="data.item.archived ? 'dark' : 'outline-dark'"
+                    @click="orderMoveDown(data.item)">
+            <b-icon icon="arrow-down"></b-icon>
+          </b-button>
+
+          <b-button size="sm"
+                    class="ml-1"
+                    :variant="data.item.archived ? 'dark' : 'outline-dark'"
+                    @click="orderMoveUp(data.item)">
+            <b-icon icon="arrow-up"></b-icon>
+          </b-button>
         </template>
 
         <template #cell()="data">
@@ -221,11 +228,21 @@ export default {
       // Trigger submit handler
       this.handleAddNewLocation()
     },
-    async onOrderChanged(item, newIndex) {
+    async orderMoveUp(item) {
+      if (item.order > 0) {
+        await this.reorderItem(item, item.order - 1)
+      }
+    },
+    async orderMoveDown(item) {
+      if (item.order < this.userProfile.userLocations.length - 1) {
+        await this.reorderItem(item, item.order + 1)
+      }
+    },
+    async reorderItem(item, newIndex) {
       const locations = this.userProfile.userLocations.sort((a, b) => a.order - b.order)
-      const origItemIndex = item.order
-      locations[origItemIndex]["order"] = newIndex
-      locations[newIndex]["order"] = origItemIndex
+      const origIndex = item.order
+      locations[origIndex]["order"] = newIndex
+      locations[newIndex]["order"] = origIndex
       this.userProfile.userLocations = locations
       await this.updateProfile();
     },

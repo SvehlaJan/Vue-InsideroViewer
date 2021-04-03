@@ -140,6 +140,8 @@ export const store = new Vuex.Store({
                     neighborhood: query.neighborhood,
                     type: (query.type === 'all') ? null : query.type,
                     active: (query.active === 'all') ? null : query.active,
+                    limit: 250,
+                    sortBy: 'id',
                     offer: "sell",
                 }
                 Object.keys(params).forEach((key) => (params[key] == null) && delete params[key]);
