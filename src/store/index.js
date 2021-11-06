@@ -221,6 +221,7 @@ async function fetchLocationSearchData(path, params) {
 }
 
 function parseRawOffers(offersList, offersHistory) {
+    console.log("Parsing offers: ", offersList)
     return offersList.map(function (item) {
         let offerId = item["general"]["id"];
         let subtype = item["general"]["subtype"] || item["general"]["type"]
@@ -271,7 +272,7 @@ function parseRawOffers(offersList, offersHistory) {
         let offerHistory = offersHistory.find((e) => e.offerId === offerId);
         let category = offerHistory?.category || 0;
 
-        let urls = item["general"]["url"].map(url => ({url: url}));
+        let urls = item["urls"]["activeUrls"].map(url => ({url: url}));
 
         return {
             id: offerId,

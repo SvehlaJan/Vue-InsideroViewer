@@ -3,7 +3,7 @@ import App from './App.vue'
 import {store} from './store'
 import {router} from './router'
 import {auth} from './firebase'
-import * as VueGoogleMaps from 'gmap-vue'
+// import * as VueGoogleMaps from 'gmap-vue'
 import VueMobileDetection from "vue-mobile-detection";
 import {BootstrapVue, BootstrapVueIcons} from 'bootstrap-vue'
 import '@/assets/custom.scss'
@@ -14,11 +14,11 @@ import lodash from 'lodash'
 Vue.use(BootstrapVue);
 Vue.use(BootstrapVueIcons)
 
-Vue.use(VueGoogleMaps, {
-    load: {
-        key: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
-    },
-})
+// Vue.use(VueGoogleMaps, {
+//     load: {
+//         key: process.env.VUE_APP_GOOGLE_MAPS_API_KEY,
+//     },
+// })
 
 axios.defaults.baseURL = 'https://api.insidero.com/v3'
 axios.defaults.timeout = 30000
