@@ -14,7 +14,7 @@
                 v-for="state in propertyStates"
                 v-bind:key="state.text"
                 :pressed="state.value === $route.query.active || ($route.query.type == null && state.value === 'all')"
-                @click="setLocation(null, null, state)">
+                @click="setState(state)">
               {{ state.text }}
             </b-button>
           </b-button-group>
@@ -26,10 +26,21 @@
                 v-for="category in propertyTypes"
                 v-bind:key="category.text"
                 :pressed="category.value === $route.query.type || ($route.query.type == null && category.value === 'all')"
-                @click="setLocation(null, category, null)">
+                @click="setCategory(category)">
               {{ category.text }}
             </b-button>
           </b-button-group>
+
+          <b-form-group label="Min space" label-for="space_min" class="mt-3 ml-3 mr-4">
+            <b-form-input
+              id="space_min"
+              v-model="spaceMin"
+              placeholder="Min m2"
+              type="number"
+              min="0"
+              debounce="400">
+            </b-form-input>
+          </b-form-group>
 
           <nav class="mt-4" v-if="userLocations != null">
             <b-nav vertical pills>
@@ -37,7 +48,7 @@
                   v-for="location in userLocations"
                   v-bind:key="location.city.value"
                   :active="isLocationActive(location)"
-                  @click="setLocation(location, null, null)">
+                  @click="setLocation(location)">
                 {{ getLocationDisplayName(location) }}
               </b-nav-item>
             </b-nav>
@@ -90,6 +101,12 @@ export default {
         {text: 'Inactive', value: 'false'},
         {text: 'All', value: 'all'},
       ],
+      spaceMin: 0,
+    }
+  },
+  watch: {
+    spaceMin: function(val, oldVal) {
+      this.setSpaceMin(val);
     }
   },
   computed: {
@@ -103,24 +120,27 @@ export default {
     logout() {
       this.$store.dispatch('logout')
     },
-    setLocation(location, category, active) {
+    setLocation(location) {
       let newQuery = {...this.$route.query}
-
-      if (location != null) {
-        newQuery.country = location.country.value;
-        newQuery.region = location.region.value;
-        newQuery.city = location.city.value;
-        newQuery.neighborhood = location.neighborhood?.value;
-      }
-      if (category != null) {
-        newQuery.type = category.value;
-      }
-      if (active != null) {
-        newQuery.active = active.value;
-      }
-
-      Object.keys(newQuery).forEach((key) => (newQuery[key] == null) && delete newQuery[key]);
-
+      newQuery.country = location.country.value;
+      newQuery.region = location.region.value;
+      newQuery.city = location.city.value;
+      newQuery.neighborhood = location.neighborhood?.value;
+      this.$router.push({path: '/offers', query: newQuery})
+    },
+    setCategory(category) {
+      let newQuery = {...this.$route.query}
+      newQuery.type = category.value;
+      this.$router.push({path: '/offers', query: newQuery})
+    },
+    setState(active) {
+      let newQuery = {...this.$route.query}
+      newQuery.active = active.value;
+      this.$router.push({path: '/offers', query: newQuery})
+    },
+    setSpaceMin(spaceMin) {
+      let newQuery = {...this.$route.query}
+      newQuery.spaceMin = spaceMin > 0 ? spaceMin : undefined;
       this.$router.push({path: '/offers', query: newQuery})
     },
     isLocationActive(location) {

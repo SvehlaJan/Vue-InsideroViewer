@@ -131,7 +131,6 @@ export const store = new Vuex.Store({
         async fetchOffers({commit, state}, query) {
             if (query != null && state.userProfile?.apiKey) {
                 commit('setOffersLoading', true)
-
                 const params = {
                     api_key: state.userProfile.apiKey,
                     country: query.country,
@@ -140,6 +139,7 @@ export const store = new Vuex.Store({
                     neighborhood: query.neighborhood,
                     type: (query.type === 'all') ? null : query.type,
                     active: (query.active === 'all') ? null : query.active,
+                    spaceMin: query.spaceMin,
                     limit: 250,
                     sortBy: 'id',
                     offer: "sell",
