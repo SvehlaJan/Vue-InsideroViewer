@@ -356,7 +356,7 @@ function parseRawOffers(offersList, offersHistory) {
         }
       : null;
 
-    let offerHistory = offersHistory.find((e) => e.offerId === offerId);
+    let offerHistory = offersHistory.find(e => e.offerId === offerId);
     let category = offerHistory?.category || 0;
 
     // favorite: offersHistory.get(offerId)?.favorite ?? false,
