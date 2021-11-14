@@ -30,6 +30,13 @@
                 @click="toggleArchive(data.item)">
         <b-icon icon="archive"></b-icon>
       </b-button>
+
+      <!-- <b-button size="sm"
+                class="ml-2"
+                :variant="data.item.trash ? 'dark' : 'outline-dark'"
+                @click="toggleTrash(data.item)">
+        <b-icon icon="trash"></b-icon>
+      </b-button> -->
     </template>
 
     <template #row-details="row">
@@ -96,18 +103,23 @@ export default {
     }
   },
   methods: {
-    showEmbeddedPage(offer) {
+    async showEmbeddedPage(offer) {
       this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(offer))
       this.$store.dispatch('setSelectedOffer', offer)
     },
-    toggleFavorite(offer) {
+    async toggleFavorite(offer) {
       const newValue = (offer.category === 1) ? 0 : 1;
       this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
+      // this.$store.dispatch('updateOfferState', {id: offer.id, favorite: !offer.favorite})
     },
-    toggleArchive(offer) {
+    async toggleArchive(offer) {
       const newValue = (offer.category === 10) ? 0 : 10;
       this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
-    }
+      // this.$store.dispatch('updateOfferState', {id: offer.id, archive: !offer.archive})
+    },
+    async toggleTrash(offer) {
+      this.$store.dispatch('updateOfferState', {id: offer.id, trash: !offer.trash})
+    },
   }
 }
 </script>
