@@ -10,9 +10,9 @@
         <form ref="form" @submit.stop.prevent="handleResetPassword">
           <b-form-input
             id="input-password-reset"
+            v-model="passwordResetEmail"
             type="email"
             placeholder="Your email"
-            v-model="passwordResetEmail"
             required
           >
           </b-form-input>
@@ -22,11 +22,11 @@
       <h1 class="mt-4">Welcome</h1>
 
       <EmailCredentialsForm
-        @submitForm="signInWithEmailAndPassword"
         :error-message="errorMessage"
         :show-error="showError"
         :show-success="showSuccess"
         submit-button-label="Login"
+        @submitForm="signInWithEmailAndPassword"
       />
 
       <div class="mt-2">
@@ -48,11 +48,11 @@
       <h1 class="mt-4">Get Started</h1>
 
       <EmailCredentialsForm
-        @submitForm="signUpWithEmailAndPassword"
         :error-message="errorMessage"
         :show-error="showError"
         :show-success="showSuccess"
         submit-button-label="Register"
+        @submitForm="signUpWithEmailAndPassword"
       />
 
       <div class="mt-2">

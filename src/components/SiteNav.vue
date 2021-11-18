@@ -11,10 +11,10 @@
         <div class="p-2">
           <b-button-group class="mt-1 ml-3">
             <b-button
+              v-for="state in propertyStates"
+              :key="state.text"
               class="py-1 px-2"
               variant="outline-primary"
-              v-for="state in propertyStates"
-              v-bind:key="state.text"
               :pressed="
                 state.value === $route.query.active ||
                   ($route.query.type == null && state.value === 'all')
@@ -27,10 +27,10 @@
 
           <b-button-group class="mt-2 ml-3">
             <b-button
+              v-for="category in propertyTypes"
+              :key="category.text"
               class="py-1 px-2"
               variant="outline-primary"
-              v-for="category in propertyTypes"
-              v-bind:key="category.text"
               :pressed="
                 category.value === $route.query.type ||
                   ($route.query.type == null && category.value === 'all')
@@ -57,11 +57,11 @@
             </b-form-input>
           </b-form-group>
 
-          <nav class="mt-4" v-if="userLocations != null">
+          <nav v-if="userLocations != null" class="mt-4">
             <b-nav vertical pills>
               <b-nav-item
                 v-for="location in userLocations"
-                v-bind:key="location.city.value"
+                :key="location.city.value"
                 :active="isLocationActive(location)"
                 @click="setLocation(location)"
               >
@@ -72,7 +72,7 @@
 
           <hr class="my-3" />
 
-          <nav class="mt-4" v-if="isAuthenticated">
+          <nav v-if="isAuthenticated" class="mt-4">
             <b-nav vertical pills>
               <b-nav-item
                 :to="{ path: 'settings' }"
@@ -92,9 +92,9 @@
     <b-navbar toggleable="md" type="dark" variant="primary">
       <b-button
         v-if="hasLocations"
+        v-b-toggle.sidebar-nav
         class="mr-4"
         variant="outline-light"
-        v-b-toggle.sidebar-nav
       >
         <b-icon icon="list"></b-icon>
       </b-button>

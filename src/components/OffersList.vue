@@ -38,25 +38,28 @@
       </template>
     </b-modal>
 
-    <h5 class="mt-4" v-if="(favorites || []).length > 0">Favorites</h5>
+    <h5 v-if="(parsedOffers.favorites || []).length > 0" class="mt-4">Favorites</h5>
     <OffersTable
-      :fields="fields"
-      :offers="favorites"
-      v-if="(favorites || []).length > 0"
+      v-if="(parsedOffers.favorites || []).length > 0"
+      :offers="parsedOffers.favorites"
     />
 
-    <h5 class="mt-4" v-if="(untagged || []).length > 0">New</h5>
+    <h5 v-if="(parsedOffers.new || []).length > 0" class="mt-4">New</h5>
     <OffersTable
-      :fields="fields"
-      :offers="untagged"
-      v-if="(untagged || []).length > 0"
+      v-if="(parsedOffers.new || []).length > 0"
+      :offers="parsedOffers.new"
     />
 
-    <h5 class="mt-4" v-if="(archived || []).length > 0">Archived</h5>
+    <h5 v-if="(parsedOffers.seen || []).length > 0" class="mt-4">Seen</h5>
     <OffersTable
-      :fields="fields"
-      :offers="archived"
-      v-if="(archived || []).length > 0"
+      v-if="(parsedOffers.seen || []).length > 0"
+      :offers="parsedOffers.seen"
+    />
+
+    <h5 v-if="(parsedOffers.trash || []).length > 0" class="mt-4">Trash</h5>
+    <OffersTable
+      v-if="(parsedOffers.trash || []).length > 0"
+      :offers="parsedOffers.trash"
     />
   </b-container>
 </template>
@@ -71,42 +74,12 @@ export default {
   components: { OffersTable },
   data() {
     return {
-      fields: [
-        { key: "id", sortable: false },
-        { key: "current_price", sortable: true, label: "Price" },
-        { key: "published", sortable: true },
-        { key: "updated", sortable: true },
-        { key: "type", sortable: false },
-        { key: "rooms", sortable: false },
-        { key: "size", sortable: true },
-        { key: "land", sortable: true },
-        { key: "controls", sortable: false, label: "" },
-      ],
-      selectedOfferUrl: "",
+      selectedOfferUrl: ""
     };
   },
   computed: {
     ...mapState(["userProfile"]),
-    ...mapGetters(["offers", "offersLoading", "selectedOffer"]),
-
-    favorites: function() {
-      return _.filter(this.offers, function(o) {
-        return o.favorite;
-      });
-    },
-    archived: function() {
-      return _.filter(this.offers, function(o) {
-        return o.archived;
-      });
-    },
-    untagged: function() {
-      return _.filter(this.offers, function(o) {
-        return !o.favorite && !o.archived;
-      });
-    },
-  },
-  async mounted() {
-    await this.$store.dispatch("fetchOffers", this.$route.query);
+    ...mapGetters(["parsedOffers", "offersLoading", "selectedOffer"]),
   },
   watch: {
     async $route(to, from) {
@@ -133,31 +106,32 @@ export default {
       // } else {
       //   this.$bvModal.hide('modalEmbed');
       // }
-    },
+    }
+  },
+  async mounted() {
+    await this.$store.dispatch("fetchOffers", this.$route.query);
   },
   methods: {
     hasSelectedOfferMoreUrls(offer) {},
     getSelectedOfferSortedUrls(offer) {},
     navigateToSelectedOfferNextUrl(offer) {},
     async toggleFavorite(offer) {
-      const newValue = offer.category === 1 ? 0 : 1;
-      await this.$store.dispatch("updateOfferCategory", {
-        offer: offer,
-        category: newValue,
+      await this.$store.dispatch("updateOfferState", {
+        id: offer.id,
+        favorite: !offer.favorite
       });
       await this.closeModal();
     },
-    async toggleArchive(offer) {
-      const newValue = offer.category === 10 ? 0 : 10;
-      await this.$store.dispatch("updateOfferCategory", {
-        offer: offer,
-        category: newValue,
+    async toggleTrash(offer) {
+      await this.$store.dispatch("updateOfferState", {
+        id: offer.id,
+        trash: !offer.trash
       });
       await this.closeModal();
     },
     async closeModal() {
       await this.$store.dispatch("setSelectedOffer", null);
-    },
-  },
+    }
+  }
 };
 </script>

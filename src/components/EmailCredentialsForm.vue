@@ -43,6 +43,12 @@
 
 <script>
 export default {
+  props: {
+    showSuccess: Boolean,
+    showError: Boolean,
+    errorMessage: String,
+    submitButtonLabel: String,
+  },
   data() {
     return {
       formData: {
@@ -52,12 +58,6 @@ export default {
       intShowSuccess: false,
       intShowError: false,
     };
-  },
-  props: {
-    showSuccess: Boolean,
-    showError: Boolean,
-    errorMessage: String,
-    submitButtonLabel: String,
   },
   watch: {
     showSuccess: async function(newValue, oldValue) {

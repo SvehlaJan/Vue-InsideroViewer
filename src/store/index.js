@@ -11,31 +11,32 @@ export const store = new Vuex.Store({
   state: {
     userProfile: {},
     offersHistory: {},
-    allRawOffers: {},
-    rawOffers: { offers: {} },
+    rawOffers: {},
+    parsedOffers: { favorites: [], new: [], seen: [], trash: [] },
     offersLoading: false,
     selectedOffer: {},
 
     locationSearchCountries: [],
     locationSearchRegions: [],
     locationSearchCities: [],
-    locationSearchNeighborhoods: [],
+    locationSearchNeighborhoods: []
   },
   mutations: {
     setUserProfile(state, val) {
       console.log("setting user profile:", val);
-      // state.userProfile = val
       Vue.set(state, "userProfile", val);
     },
     setOffersHistory(state, val) {
-      console.log("setting offers history:", val);
-      //   state.offersHistory = val;
+      // console.log("setting offers history:", val);
       Vue.set(state, "offersHistory", val);
     },
     setRawOffers(state, val) {
       // console.log("setting raw offers:", val)
-      //   state.rawOffers = val;
       Vue.set(state, "rawOffers", val);
+    },
+    setParsedOffers(state, val) {
+      // console.log("setting parsed offers:", val)
+      Vue.set(state, "parsedOffers", val);
     },
     setSelectedOffer(state, val) {
       // console.log("setting selected offer:", val)
@@ -60,7 +61,7 @@ export const store = new Vuex.Store({
     setLocationSearchNeighborhoods(state, val) {
       // console.log("setting location search neighborhoods results:", val)
       Vue.set(state, "locationSearchNeighborhoods", val);
-    },
+    }
   },
   actions: {
     async signInAnonymously({ dispatch }) {
@@ -68,7 +69,7 @@ export const store = new Vuex.Store({
       await fb.usersCollection.doc(user.uid).set({
         apiKey: "",
         userLocations: [],
-        offersHistory: [],
+        offersHistory: []
       });
       dispatch("fetchUserProfile", user);
     },
@@ -87,7 +88,7 @@ export const store = new Vuex.Store({
       await fb.usersCollection.doc(user.uid).set({
         apiKey: "",
         userLocations: [],
-        offersHistory: [],
+        offersHistory: []
       });
       dispatch("fetchUserProfile", user);
     },
@@ -108,25 +109,20 @@ export const store = new Vuex.Store({
 
       // await fb.auth.currentUser.updatePassword(form.newPassword)
     },
-    async fetchUserProfile({ commit }, user) {
+    async fetchUserProfile({ commit, dispatch }, user) {
       const userProfile = await fb.usersCollection.doc(user.uid).get();
       const userAuth = fb.auth.currentUser;
 
-      commit("setUserProfile", {
+      await commit("setUserProfile", {
         ...userProfile.data(),
-        isAnonymous: userAuth.isAnonymous,
+        isAnonymous: userAuth.isAnonymous
       });
 
-      const offersHistory = await fb.getUsersOfferHistory(user.uid);
-      commit("setOffersHistory", offersHistory);
+      await dispatch("fetchOffersHistory", user.uid);
 
       if (router.currentRoute.path === "/login") {
         await router.push("/");
       }
-    },
-    async fetchOffersHistory({ commit }, userId) {
-      const offersHistory = await fb.getUsersOfferHistory(userId);
-      commit("setOffersHistory", offersHistory);
     },
     async logout({ commit }) {
       await fb.auth.signOut();
@@ -142,31 +138,24 @@ export const store = new Vuex.Store({
     async setSelectedOffer({ commit }, offer) {
       commit("setSelectedOffer", offer);
     },
-    async updateOfferState({ dispatch }, offer) {
+    async updateOfferState({ dispatch, commit, state }, offer) {
+      commit("setOffersLoading", true);
       const userId = fb.auth.currentUser.uid;
       await fb
         .usersOfferHistory(userId)
         .doc(`${offer.id}`)
         .set(offer, { merge: true });
-      dispatch("fetchOffersHistory", userId);
-    },
-    async updateOfferCategory({ dispatch, state }, payload) {
-      const offersHistory = state.userProfile.offersHistory || [];
-
-      const newEntry = {
-        offerId: payload.offer.id,
-        category: payload.category,
-      };
-      const index = offersHistory.findIndex(
-        e => e.offerId === newEntry.offerId
+      await dispatch("fetchOffersHistory", userId);
+      const refreshedOffers = parseRawOffers(
+        state.rawOffers,
+        state.offersHistory
       );
-      if (index === -1) {
-        offersHistory.push(newEntry);
-      } else {
-        offersHistory[index] = newEntry;
-      }
-
-      await dispatch("updateProfile", { offersHistory: offersHistory });
+      commit("setParsedOffers", refreshedOffers);
+      commit("setOffersLoading", false);
+    },
+    async fetchOffersHistory({ commit }, userId) {
+      const offersHistory = await fb.getUsersOfferHistory(userId);
+      commit("setOffersHistory", offersHistory);
     },
     async fetchOffers({ commit, state }, query) {
       if (query != null && state.userProfile?.apiKey) {
@@ -182,23 +171,25 @@ export const store = new Vuex.Store({
           spaceMin: query.spaceMin,
           limit: 250,
           sortBy: "id",
-          offer: "sell",
+          offer: "sell"
         };
         Object.keys(params).forEach(
           key => params[key] == null && delete params[key]
         );
         const paramsStr = new URLSearchParams(params).toString();
         let url = "/offers?" + paramsStr;
-        console.log("Fetching offers from: ", url);
         try {
           const response = await axios.get(url);
-          console.log(
-            "New offers received: ",
-            Object.keys(response["data"]["results"]).length
+          const rawOffers = response["data"]["results"];
+          console.log("New offers received: ", Object.keys(rawOffers).length);
+
+          const parsedOffers = parseRawOffers(
+            Object.values(rawOffers),
+            state.offersHistory
           );
-          commit("setRawOffers", {
-            offers: response["data"]["results"],
-          });
+          commit("setRawOffers", Object.values(rawOffers));
+          commit("setParsedOffers", parsedOffers);
+          console.log("Parsing & Saving - Done");
         } finally {
           commit("setOffersLoading", false);
         }
@@ -206,7 +197,7 @@ export const store = new Vuex.Store({
     },
     async fetchCountries({ commit, state }) {
       const countries = await fetchLocationSearchData("/countries", {
-        api_key: state.userProfile.apiKey,
+        api_key: state.userProfile.apiKey
       });
       if (countries) {
         commit("setLocationSearchCountries", countries);
@@ -215,7 +206,7 @@ export const store = new Vuex.Store({
     async fetchRegions({ commit, state }, params) {
       const regions = await fetchLocationSearchData("/regions", {
         api_key: state.userProfile.apiKey,
-        ...params,
+        ...params
       });
       if (regions) {
         commit("setLocationSearchRegions", regions);
@@ -224,7 +215,7 @@ export const store = new Vuex.Store({
     async fetchCities({ commit, state }, params) {
       const cities = await fetchLocationSearchData("/cities", {
         api_key: state.userProfile.apiKey,
-        ...params,
+        ...params
       });
       if (cities) {
         commit("setLocationSearchCities", cities);
@@ -233,31 +224,23 @@ export const store = new Vuex.Store({
     async fetchNeighborhoods({ commit, state }, params) {
       const neighborhoods = await fetchLocationSearchData("/neighborhoods", {
         api_key: state.userProfile.apiKey,
-        ...params,
+        ...params
       });
       if (neighborhoods) {
         commit("setLocationSearchNeighborhoods", neighborhoods);
       }
-    },
+    }
   },
   getters: {
     userLocations: state => state.userProfile?.userLocations,
     offersLoading: state => state.offersLoading,
     selectedOffer: state => state.selectedOffer,
+    parsedOffers: state => state.parsedOffers,
     isAuthenticated: state =>
       (state.userProfile != null) & (fb.auth.currentUser != null),
     isAnonymousUser: state =>
-      (state.userProfile != null) & fb.auth.currentUser.isAnonymous,
-    offers: function(state) {
-      if (!state.userProfile?.offersHistory || !state.rawOffers?.offers) {
-        return [];
-      }
-      return parseRawOffers(
-        Object.values(state.rawOffers.offers),
-        state.userProfile.offersHistory
-      );
-    },
-  },
+      (state.userProfile != null) & fb.auth.currentUser.isAnonymous
+  }
 });
 
 async function fetchLocationSearchData(path, params) {
@@ -267,13 +250,14 @@ async function fetchLocationSearchData(path, params) {
   return Object.values(response.data.results).map(function(item) {
     return {
       value: item["general"]["id"],
-      text: item["general"]["name"],
+      text: item["general"]["name"]
     };
   });
 }
 
 function parseRawOffers(offersList, offersHistory) {
-  return offersList.map(function(item) {
+  const parsedOffers = { favorites: [], new: [], seen: [], trash: [] };
+  offersList.forEach(function(item) {
     let offerId = item["general"]["id"];
     let subtype = item["general"]["subtype"] || item["general"]["type"];
     if (subtype === "commercial") {
@@ -296,20 +280,20 @@ function parseRawOffers(offersList, offersHistory) {
       ? [
           {
             type: "Min",
-            price: `${rawPrices["min"]} ${rawPrices["currency"]}`,
+            price: `${rawPrices["min"]} ${rawPrices["currency"]}`
           },
           {
             type: "Max",
-            price: `${rawPrices["max"]} ${rawPrices["currency"]}`,
+            price: `${rawPrices["max"]} ${rawPrices["currency"]}`
           },
           {
             type: "Current",
-            price: `${currentPriceStr} ${discountPriceStr}`,
+            price: `${currentPriceStr} ${discountPriceStr}`
           },
           {
             type: "PSQ",
-            price: `${rawPrices["perSquareMeter"]} ${rawPrices["currency"]}`,
-          },
+            price: `${rawPrices["perSquareMeter"]} ${rawPrices["currency"]}`
+          }
         ]
       : null;
 
@@ -317,19 +301,19 @@ function parseRawOffers(offersList, offersHistory) {
     let publishedDateStr = rawEvents
       ? rawEvents["visibility"]["0"]["date"]
       : null;
-    let lastUpdatedDateStr = rawEvents
-      ? rawEvents["visibility"].slice(-1)[0]["date"]
-      : null;
     let updates =
       rawEvents && rawEvents["dataUpdates"]
         ? rawEvents["dataUpdates"].map(function(update) {
             return {
               date: update.date,
               type: update.type,
-              value: `${update.value.old} -> ${update.value.new}`,
+              value: `${update.value.old} -> ${update.value.new}`
             };
           })
-        : null;
+        : [];
+    let lastUpdatedDateStr = updates.length > 0
+      ? updates.slice(-1)[0]["date"]
+      : publishedDateStr;
 
     let rawSpace = item["space"];
     let roomFullStr = rawSpace?.room?.full || "";
@@ -337,7 +321,7 @@ function parseRawOffers(offersList, offersHistory) {
       ? `${rawSpace?.room?.min || ""}/${rawSpace?.room?.max ||
           ""}/${roomFullStr}`
       : null;
-    let sizeStr = rawSpace?.usable ? `${rawSpace["usable"]["min"]}m2` : null;
+    let spaceStr = rawSpace?.usable ? `${rawSpace["usable"]["min"]}m2` : null;
     let landStr = rawSpace?.land ? `${rawSpace["land"]["min"]}m2` : null;
 
     let rawCoordinates = item["geography"]
@@ -346,26 +330,20 @@ function parseRawOffers(offersList, offersHistory) {
     let coordinates = rawCoordinates
       ? {
           lat: parseFloat(rawCoordinates.split(",")[0]),
-          lng: parseFloat(rawCoordinates.split(",")[1]),
+          lng: parseFloat(rawCoordinates.split(",")[1])
         }
       : null;
     let marker = coordinates
       ? {
           id: offerId,
-          position: coordinates,
+          position: coordinates
         }
       : null;
 
-    let offerHistory = offersHistory.find(e => e.offerId === offerId);
-    let category = offerHistory?.category || 0;
-
-    // favorite: offersHistory.get(offerId)?.favorite ?? false,
-    // archived: offersHistory.get(offerId)?.archived ?? false,
-    // trash: offersHistory.get(offerId)?.trash ?? false,
-
     let urls = item["urls"]["activeUrls"].map(url => ({ url: url }));
+    const offerHistory = offersHistory.get(`${offerId}`);
 
-    return {
+    const offer = {
       id: offerId,
       current_price: currentPriceStr,
       published: publishedDateStr,
@@ -373,14 +351,35 @@ function parseRawOffers(offersList, offersHistory) {
       updates: updates,
       type: subtype,
       rooms: roomsStr,
-      size: sizeStr,
+      space: spaceStr,
       land: landStr,
-      category: category,
-      favorite: category === 1,
-      archived: category === 10,
+      favorite: offerHistory?.favorite ?? false,
+      archived: offerHistory?.archived ?? false,
+      trash: offerHistory?.trash ?? false,
       prices: prices,
       marker: marker,
-      urls: urls,
+      urls: urls
     };
+
+    if (offer.favorite) {
+      parsedOffers.favorites.push(offer);
+      return;
+    }
+    if (offer.trash) {
+      parsedOffers.trash.push(offer);
+      return;
+    }
+    if ((updates ?? []).length > 0) {
+      var millisecondsPerDay = 1000 * 60 * 60 * 24 * 2;
+      const nowDate = new Date();
+      const lastUpdate = new Date(updates.slice(-1)[0]["date"]);
+      const diff = nowDate.getTime() - lastUpdate.getTime();
+      if (diff < millisecondsPerDay) {
+        parsedOffers.new.push(offer);
+        return;
+      }
+    }
+    parsedOffers.seen.push(offer);
   });
+  return parsedOffers;
 }

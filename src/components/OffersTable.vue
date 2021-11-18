@@ -1,18 +1,18 @@
 <template>
   <b-table
+    ref="table"
     :items="offers"
     :fields="fields"
     :sort-by.sync="sortBy"
     :sort-desc.sync="sortDesc"
     :busy="offersLoading"
-    ref="table"
     selectable
     select-mode="single"
-    @row-clicked="item => $set(item, '_showDetails', !item._showDetails)"
     small
     hover
     striped
     stacked="sm"
+    @row-clicked="item => $set(item, '_showDetails', !item._showDetails)"
   >
     <template #cell(id)="data">
       <b-link @click="showEmbeddedPage(data.item)"> {{ data.item.id }}</b-link>
@@ -30,23 +30,16 @@
       <b-button
         size="sm"
         class="ml-2"
-        :variant="data.item.archived ? 'dark' : 'outline-dark'"
-        @click="toggleArchive(data.item)"
+        :variant="data.item.trash ? 'dark' : 'outline-dark'"
+        @click="toggleTrash(data.item)"
       >
-        <b-icon icon="archive"></b-icon>
-      </b-button>
-
-      <!-- <b-button size="sm"
-                class="ml-2"
-                :variant="data.item.trash ? 'dark' : 'outline-dark'"
-                @click="toggleTrash(data.item)">
         <b-icon icon="trash"></b-icon>
-      </b-button> -->
+      </b-button>
     </template>
 
     <template #row-details="row">
       <b-row>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.urls">
+        <b-col v-if="row.item.urls" cols="12" sm="6" no-gutters>
           <b-card>
             <b-table
               :items="row.item.urls"
@@ -64,7 +57,7 @@
             </b-table>
           </b-card>
         </b-col>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.prices">
+        <b-col v-if="row.item.prices" cols="12" sm="6" no-gutters>
           <b-card>
             <b-table
               :items="row.item.prices"
@@ -72,7 +65,7 @@
             ></b-table>
           </b-card>
         </b-col>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.updates">
+        <b-col v-if="row.item.updates" cols="12" sm="6" no-gutters>
           <b-card>
             <b-table
               :items="row.item.updates"
@@ -108,17 +101,27 @@ import { mapGetters } from "vuex";
 export default {
   name: "OffersTable",
   props: {
-    fields: {},
     offers: {}
-  },
-  computed: {
-    ...mapGetters(["offersLoading"])
   },
   data() {
     return {
       sortBy: "updated",
-      sortDesc: true
+      sortDesc: true,
+      fields: [
+        { key: "id", sortable: false },
+        { key: "current_price", sortable: true, label: "Price" },
+        { key: "published", sortable: true },
+        { key: "updated", sortable: true },
+        { key: "type", sortable: false },
+        { key: "rooms", sortable: false },
+        { key: "space", sortable: true },
+        { key: "land", sortable: true },
+        { key: "controls", sortable: false, label: "" }
+      ]
     };
+  },
+  computed: {
+    ...mapGetters(["offersLoading"])
   },
   methods: {
     async showEmbeddedPage(offer) {
@@ -126,23 +129,13 @@ export default {
       this.$store.dispatch("setSelectedOffer", offer);
     },
     async toggleFavorite(offer) {
-      const newValue = offer.category === 1 ? 0 : 1;
-      this.$store.dispatch("updateOfferCategory", {
-        offer: offer,
-        category: newValue
+      await this.$store.dispatch("updateOfferState", {
+        id: offer.id,
+        favorite: !offer.favorite
       });
-      // this.$store.dispatch('updateOfferState', {id: offer.id, favorite: !offer.favorite})
-    },
-    async toggleArchive(offer) {
-      const newValue = offer.category === 10 ? 0 : 10;
-      this.$store.dispatch("updateOfferCategory", {
-        offer: offer,
-        category: newValue
-      });
-      // this.$store.dispatch('updateOfferState', {id: offer.id, archive: !offer.archive})
     },
     async toggleTrash(offer) {
-      this.$store.dispatch("updateOfferState", {
+      await this.$store.dispatch("updateOfferState", {
         id: offer.id,
         trash: !offer.trash
       });

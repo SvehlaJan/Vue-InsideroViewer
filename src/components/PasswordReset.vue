@@ -1,13 +1,13 @@
 <template>
   <b-modal title="Reset Password">
-    <div @click="$emit('close')" class="close">close</div>
+    <div class="close" @click="$emit('close')">close</div>
     <div v-if="!showSuccess">
       <p>Enter your email to reset your password</p>
       <form @submit.prevent>
         <input v-model.trim="email" type="email" placeholder="you@email.com" />
       </form>
       <p v-if="errorMsg !== ''" class="error">{{ errorMsg }}</p>
-      <button @click="resetPassword()" class="button">Reset</button>
+      <button class="button" @click="resetPassword()">Reset</button>
     </div>
     <p v-else>Success! Check your email for a reset link.</p>
   </b-modal>

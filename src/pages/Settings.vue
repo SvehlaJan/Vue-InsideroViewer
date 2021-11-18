@@ -1,29 +1,29 @@
 <template>
   <b-container>
     <b-alert
-      class="mt-4"
       v-model="locationsFormStatus.showSuccess"
+      class="mt-4"
       variant="success"
       show
       >Success</b-alert
     >
     <b-alert
-      class="mt-4"
       v-model="locationsFormStatus.showError"
+      class="mt-4"
       variant="danger"
       show
     >
       {{ locationsFormStatus.errorMessage }}
     </b-alert>
 
-    <b-modal id="modal-location" size="lg" @ok="handleOk" title="Add location">
+    <b-modal id="modal-location" size="lg" title="Add location" @ok="handleOk">
       <form ref="form" @submit.stop.prevent="handleAddNewLocation">
         <b-form-select
           v-model="countryForm.selectedItem"
           :options="locationSearchCountries"
           :disabled="!locationSearchCountries"
-          v-on:change="getRegions($event)"
           class="mb-3"
+          @change="getRegions($event)"
         >
           <template #first>
             <b-form-select-option :value="''" disabled
@@ -46,9 +46,9 @@
         </b-form-select>
 
         <vue-typeahead-bootstrap
+          v-model="cityForm.searchQuery"
           class="mb-3"
           :data="locationSearchCities"
-          v-model="cityForm.searchQuery"
           :serializer="
             s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           "
@@ -58,8 +58,8 @@
         />
 
         <vue-typeahead-bootstrap
-          :data="locationSearchNeighborhoods"
           v-model="neighborhoodForm.searchQuery"
+          :data="locationSearchNeighborhoods"
           :serializer="
             s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           "
@@ -72,7 +72,7 @@
 
     <b-card title="Insidero API Key" class="mt-4">
       <b-form-group id="input-group-1" label-for="input-1" class="mt-4">
-        <b-form-input id="input-1" type="text" v-model="apiKey" required>
+        <b-form-input id="input-1" v-model="apiKey" type="text" required>
         </b-form-input>
         <div>
           <p>
@@ -143,20 +143,20 @@
     <b-card v-if="userProfile.isAnonymous" title="Create Account" class="mt-4">
       <p>Your locations and favorite offers will be saved.</p>
       <EmailCredentialsForm
-        @submitForm="createAccountForAnonymousUser"
         :error-message="accountFormStatus.errorMessage"
         :show-error="accountFormStatus.showError"
         :show-success="accountFormStatus.showSuccess"
         submit-button-label="Register"
+        @submitForm="createAccountForAnonymousUser"
       />
     </b-card>
     <b-card v-else title="Profile" class="mt-4">
       <ChangePasswordForm
-        @submitForm="changeUserPassword"
         :error-message="accountFormStatus.errorMessage"
         :show-error="accountFormStatus.showError"
         :show-success="accountFormStatus.showSuccess"
         submit-button-label="Change password"
+        @submitForm="changeUserPassword"
       />
     </b-card>
   </b-container>
@@ -170,6 +170,11 @@ import EmailCredentialsForm from "@/components/EmailCredentialsForm";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
 
 export default {
+  components: {
+    VueTypeaheadBootstrap,
+    EmailCredentialsForm,
+    ChangePasswordForm
+  },
   data() {
     return {
       locationsFormStatus: {
@@ -234,11 +239,6 @@ export default {
       this.apiKey = this.userProfile?.apiKey;
       this.getCountries();
     }
-  },
-  components: {
-    VueTypeaheadBootstrap,
-    EmailCredentialsForm,
-    ChangePasswordForm
   },
   computed: {
     ...mapState([
