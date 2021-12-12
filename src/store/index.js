@@ -12,12 +12,12 @@ export const store = new Vuex.Store({
     apiKey: "",
     offersHistory: new Map(),
     savedLocations: new Map(),
+    browsingHistory: new Map(),
     rawOffers: {},
     parsedOffers: { favorites: [], new: [], seen: [], trash: [] },
     offersLoading: false,
     selectedOffer: {},
     spaceMin: 75,
-    lastQuery: "",
 
     locationSearchCountries: [],
     locationSearchRegions: [],
@@ -26,7 +26,6 @@ export const store = new Vuex.Store({
   },
   mutations: {
     setApiKey(state, val) {
-      console.log("setApiKey", val);
       state.apiKey = val;
     },
     setOffersHistory(state, val) {
@@ -34,6 +33,9 @@ export const store = new Vuex.Store({
     },
     setSavedLocations(state, val) {
       Vue.set(state, "savedLocations", val);
+    },
+    setBrowsingHistory(state, val) {
+      Vue.set(state, "browsingHistory", val);
     },
     setRawOffers(state, val) {
       Vue.set(state, "rawOffers", val);
@@ -46,9 +48,6 @@ export const store = new Vuex.Store({
     },
     setSpaceMin(state, val) {
       state.spaceMin = val;
-    },
-    setLastQuery(state, val) {
-      state.lastQuery = val;
     },
     setOffersLoading(state, val) {
       state.offersLoading = val;
@@ -133,14 +132,15 @@ export const store = new Vuex.Store({
     },
     async insertOrUpdateOfferState({ dispatch, commit, state }, offer) {
       commit("setOffersLoading", true);
-      await fb
-        .usersOfferHistory()
-        .doc(`${offer.id}`)
-        .set(offer, { merge: true });
+      await fb.usersOfferHistory().doc(`${offer.id}`).set(offer, { merge: true });
       await dispatch("fetchOffersHistory");
+
+      const lastOpenedTimestamp = await getLastOpenedTimestamp(this.$route.query);
+
       const refreshedOffers = parseRawOffers(
         state.rawOffers,
-        state.offersHistory
+        state.offersHistory,
+        lastOpenedTimestamp,
       );
       commit("setParsedOffers", refreshedOffers);
       commit("setOffersLoading", false);
@@ -167,7 +167,7 @@ export const store = new Vuex.Store({
       await dispatch("fetchSavedLocations");
     },
     async fetchOffers({ commit, state }, query) {
-      if (query != null && state.apiKey && query !== state.lastQuery) {
+      if (query != null && state.apiKey) {
         commit("setOffersLoading", true);
         const params = {
           api_key: state.apiKey,
@@ -187,24 +187,33 @@ export const store = new Vuex.Store({
         );
         const paramsStr = new URLSearchParams(params).toString();
         let url = "/offers?" + paramsStr;
-        try {
-          // const response = await axios.get(url);
-          // const rawOffers = response["data"]["results"];
-          // console.log("New offers received: ", Object.keys(rawOffers).length);
+        const lastOpenedTimestamp = await getLastOpenedTimestamp(query);
 
-          // const parsedOffers = parseRawOffers(
-          //   Object.values(rawOffers),
-          //   state.offersHistory
-          // );
-          // commit("setRawOffers", Object.values(rawOffers));
-          // commit("setParsedOffers", parsedOffers);
-          // console.log("Parsing & Saving - Done");
-          commit("setLastQuery", query);
+        try {
+          let timestamp = Date.now();
+          const response = await axios.get(url);
+          const rawOffers = response["data"]["results"];
+
+          console.log("New offers received: ", Object.keys(rawOffers).length, " It took ", Date.now() - timestamp, "ms");
+          timestamp = Date.now();
+
+          const parsedOffers = parseRawOffers(
+            Object.values(rawOffers),
+            state.offersHistory,
+            lastOpenedTimestamp,
+          );
+          commit("setRawOffers", Object.values(rawOffers));
+          commit("setParsedOffers", parsedOffers);
+
+          console.log("Parsing & Saving - Done, It took ", Date.now() - timestamp, "ms");
+          timestamp = Date.now();
+
+          const queryStr = new URLSearchParams(query).toString();
+          fb.usersBrowsingHistory().doc(queryStr).set({"lastOpened": Date.now()}, { merge: true });;
+          console.log("Saving browsing history - Done, It took ", Date.now() - timestamp, "ms");
         } finally {
           commit("setOffersLoading", false);
         }
-      } else {
-        console.log("No new offers");
       }
     },
     async fetchCountries({ commit, state }) {
@@ -258,6 +267,13 @@ export const store = new Vuex.Store({
   }
 });
 
+async function getLastOpenedTimestamp(query) {
+  const queryStr = new URLSearchParams(query).toString();
+  const browsingHistory = await fb.usersBrowsingHistory()?.doc(queryStr).get();
+  const timestamp = browsingHistory?.data()?.lastOpened ?? 0;
+  return timestamp;
+}
+
 async function fetchLocationSearchData(path, params) {
   Object.keys(params).forEach(
     (key) => params[key] == null && delete params[key]
@@ -272,7 +288,7 @@ async function fetchLocationSearchData(path, params) {
   });
 }
 
-function parseRawOffers(offersList, offersHistory) {
+function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
   const parsedOffers = { favorites: [], new: [], seen: [], trash: [] };
   offersList.forEach(function (item) {
     let offerId = item["general"]["id"];
@@ -315,7 +331,7 @@ function parseRawOffers(offersList, offersHistory) {
       : null;
 
     let rawEvents = item["events"];
-    let publishedDateStr = rawEvents
+    let publishedDate = rawEvents
       ? rawEvents["visibility"]["0"]["date"]
       : null;
     let updates =
@@ -328,8 +344,7 @@ function parseRawOffers(offersList, offersHistory) {
             };
           })
         : [];
-    let lastUpdatedDateStr =
-      updates.length > 0 ? updates.slice(-1)[0]["date"] : publishedDateStr;
+    let lastUpdatedDate = updates.length > 0 ? updates.slice(-1)[0]["date"] : publishedDate;
 
     let rawSpace = item["space"];
     let roomFullStr = rawSpace?.room?.full || "";
@@ -367,8 +382,8 @@ function parseRawOffers(offersList, offersHistory) {
     const offer = {
       id: offerId,
       current_price: currentPriceStr,
-      published: publishedDateStr,
-      updated: lastUpdatedDateStr,
+      published: publishedDate,
+      updated: lastUpdatedDate,
       updates: updates,
       type: subtype,
       rooms: roomsStr,
@@ -391,15 +406,9 @@ function parseRawOffers(offersList, offersHistory) {
       parsedOffers.trash.push(offer);
       return;
     }
-    if ((updates ?? []).length > 0) {
-      var millisecondsPerDay = 1000 * 60 * 60 * 24 * 2;
-      const nowDate = new Date();
-      const lastUpdate = new Date(updates.slice(-1)[0]["date"]);
-      const diff = nowDate.getTime() - lastUpdate.getTime();
-      if (diff < millisecondsPerDay) {
-        parsedOffers.new.push(offer);
-        return;
-      }
+    if (lastOpenedTimestamp - new Date(lastUpdatedDate).getTime() < 0) {
+      parsedOffers.new.push(offer);
+      return;
     }
     parsedOffers.seen.push(offer);
   });

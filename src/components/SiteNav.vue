@@ -7,85 +7,83 @@
       title="Insidero Viewer"
       shadow
     >
-      <template>
-        <div class="p-2">
-          <b-button-group class="mt-1 ml-3">
-            <b-button
-              v-for="state in propertyStates"
-              :key="state.text"
-              class="py-1 px-2"
-              variant="outline-primary"
-              :pressed="
-                state.value === $route.query.active ||
-                ($route.query.type == null && state.value === 'all')
-              "
-              @click="setState(state)"
-            >
-              {{ state.text }}
-            </b-button>
-          </b-button-group>
-
-          <b-button-group class="mt-2 ml-3">
-            <b-button
-              v-for="category in propertyTypes"
-              :key="category.text"
-              class="py-1 px-2"
-              variant="outline-primary"
-              :pressed="
-                category.value === $route.query.type ||
-                ($route.query.type == null && category.value === 'all')
-              "
-              @click="setCategory(category)"
-            >
-              {{ category.text }}
-            </b-button>
-          </b-button-group>
-
-          <b-form-group
-            label="Min space"
-            label-for="space_min"
-            class="mt-3 ml-3 mr-4"
+      <div class="p-2">
+        <b-button-group class="mt-1 ml-3">
+          <b-button
+            v-for="state in propertyStates"
+            :key="state.text"
+            class="py-1 px-2"
+            variant="outline-primary"
+            :pressed="
+              state.value === $route.query.active ||
+              ($route.query.type == null && state.value === 'all')
+            "
+            @click="setState(state)"
           >
-            <b-form-input
-              id="space_min"
-              v-model="spaceMin"
-              placeholder="Min m2"
-              type="number"
-              min="0"
+            {{ state.text }}
+          </b-button>
+        </b-button-group>
+
+        <b-button-group class="mt-2 ml-3">
+          <b-button
+            v-for="category in propertyTypes"
+            :key="category.text"
+            class="py-1 px-2"
+            variant="outline-primary"
+            :pressed="
+              category.value === $route.query.type ||
+              ($route.query.type == null && category.value === 'all')
+            "
+            @click="setCategory(category)"
+          >
+            {{ category.text }}
+          </b-button>
+        </b-button-group>
+
+        <b-form-group
+          label="Min space"
+          label-for="space_min"
+          class="mt-3 ml-3 mr-4"
+        >
+          <b-form-input
+            id="space_min"
+            v-model="spaceMin"
+            placeholder="Min m2"
+            type="number"
+            min="0"
+          >
+          </b-form-input>
+        </b-form-group>
+
+        <nav v-if="hasSavedLocations" class="mt-4">
+          <b-nav vertical pills>
+            <b-nav-item
+              v-for="location in savedLocationsArray"
+              :key="location.city.value"
+              :active="isLocationActive(location)"
+              @click="setLocation(location)"
             >
-            </b-form-input>
-          </b-form-group>
+              {{ getLocationDisplayName(location) }}
+            </b-nav-item>
+          </b-nav>
+        </nav>
 
-          <nav v-if="hasSavedLocations" class="mt-4">
-            <b-nav vertical pills>
-              <b-nav-item
-                v-for="location in savedLocationsArray"
-                :key="location.city.value"
-                :active="isLocationActive(location)"
-                @click="setLocation(location)"
-              >
-                {{ getLocationDisplayName(location) }}
-              </b-nav-item>
-            </b-nav>
-          </nav>
+        <hr class="my-3" />
 
-          <hr class="my-3" />
-
-          <nav v-if="isAuthenticated" class="mt-4">
-            <b-nav vertical pills>
-              <b-nav-item
-                :to="{ path: 'settings' }"
-                :active="$route.path === '/settings'"
-              >
-                Settings
-              </b-nav-item>
-              <b-nav-item v-b-toggle:sidebar-nav @click="logout()"
-                >Sign Out</b-nav-item
-              >
-            </b-nav>
-          </nav>
-        </div>
-      </template>
+        <nav v-if="isAuthenticated" class="mt-4">
+          <b-nav vertical pills>
+            <b-nav-item
+              :to="{ path: 'settings' }"
+              :active="$route.path === '/settings'"
+            >
+              Settings
+            </b-nav-item>
+            <b-nav-item v-b-toggle:sidebar-nav @click="logout()"
+              >Sign Out</b-nav-item
+            >
+          </b-nav>
+        </nav>
+      </div>
     </b-sidebar>
 
     <b-navbar toggleable="md" type="dark" variant="primary">
@@ -116,7 +114,7 @@ export default {
         { text: "Inactive", value: "false" },
         { text: "All", value: "all" }
       ],
-      spaceMin: this.$store.state.spaceMin,
+      spaceMin: this.$store.state.spaceMin
     };
   },
   computed: {
@@ -131,7 +129,7 @@ export default {
     }
   },
   watch: {
-    spaceMin: function(val, oldVal) {
+    spaceMin: function (val, oldVal) {
       this.setSpaceMinDebounced(val);
     }
   },

@@ -20,9 +20,6 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const authNamespace = firebase.auth;
 
-// collection references
-const usersCollection = db.collection("users");
-
 function currentUsersDoc() {
   return db.collection("users").doc(auth.currentUser.uid);
 }
@@ -33,6 +30,10 @@ function usersOfferHistory() {
 
 function usersSavedLocations() {
   return currentUsersDoc().collection("savedLocations");
+}
+
+function usersBrowsingHistory() {
+  return currentUsersDoc().collection("browsingHistory");
 }
 
 async function getUsersOfferHistory() {
@@ -54,6 +55,15 @@ async function getUsersSavedLocations() {
   return savedLocations;
 }
 
+async function getUsersBrowsingHistory() {
+  const querySnapshot = await usersBrowsingHistory().get();
+  const browsingHistory = new Map();
+  querySnapshot.forEach((doc) => {
+    browsingHistory.set(doc.id, doc.data());
+  });
+  return browsingHistory;
+}
+
 async function deleteUsersSavedLocation(locationId) {
   await usersSavedLocations().doc(locationId).delete();
 }
@@ -65,10 +75,11 @@ export {
   auth,
   authNamespace,
   currentUsersDoc,
-  usersCollection,
   usersOfferHistory,
   getUsersOfferHistory,
   usersSavedLocations,
   getUsersSavedLocations,
   deleteUsersSavedLocation,
+  usersBrowsingHistory,
+  getUsersBrowsingHistory,
 };
