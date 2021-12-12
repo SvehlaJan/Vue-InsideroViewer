@@ -119,14 +119,11 @@ export default {
   },
   computed: {
     ...mapGetters([
-      "savedLocations",
+      "savedLocationsArray",
       "hasSavedLocations",
       "isAuthenticated",
       "isAnonymousUser"
     ]),
-    savedLocationsArray() {
-      return Array.from(this.savedLocations.values());
-    }
   },
   watch: {
     spaceMin: function (val, oldVal) {

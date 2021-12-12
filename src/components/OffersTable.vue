@@ -81,7 +81,7 @@
             ></b-table>
           </b-card>
         </b-col>
-        <b-col cols="12" sm="6" no-gutters>
+        <!-- <b-col cols="12" sm="6" no-gutters>
           <b-card>
             <b-aspect aspect="10:7">
               <GmapMap
@@ -98,7 +98,7 @@
               </GmapMap>
             </b-aspect>
           </b-card>
-        </b-col>
+        </b-col> -->
       </b-row>
     </template>
   </b-table>

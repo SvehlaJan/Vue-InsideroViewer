@@ -259,6 +259,12 @@ export const store = new Vuex.Store({
     spaceMin: (state) => state.spaceMin,
     hasSavedLocations: (state) => state.savedLocations.size > 0,
     savedLocations: (state) => state.savedLocations || new Map(),
+    savedLocationsArray: (state) => {
+      // return locations ordered by order property
+      const locations = Array.from(state.savedLocations.values());
+      locations.sort((a, b) => a.order - b.order);
+      return locations;
+    },
     parsedOffers: (state) => state.parsedOffers,
     isAuthenticated: (state) =>
       state.apiKey != "" && fb.auth.currentUser != null,

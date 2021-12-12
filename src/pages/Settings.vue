@@ -242,7 +242,7 @@ export default {
       "locationSearchNeighborhoods"
     ]),
     ...mapGetters([
-      "savedLocations",
+      "savedLocationsArray",
       "hasSavedLocations",
       "userApiKey",
       "isAnonymousUser"
@@ -250,9 +250,6 @@ export default {
     isApiKey() {
       return !_.isEmpty(this.apiKey);
     },
-    savedLocationsArray() {
-      return Array.from(this.savedLocations.values());
-    }
   },
   watch: {
     "cityForm.searchQuery": function (newVal, oldVal) {
@@ -312,12 +309,12 @@ export default {
       }
     },
     async orderMoveDown(item) {
-      if (item.order < this.savedLocations.length - 1) {
+      if (item.order < this.savedLocationsArray.length - 1) {
         await this.reorderItem(item, item.order + 1);
       }
     },
     async reorderItem(item, newIndex) {
-      const locations = this.savedLocations.sort((a, b) => a.order - b.order);
+      const locations = _.cloneDeep(this.savedLocationsArray);
       const origIndex = item.order;
       locations[origIndex]["order"] = newIndex;
       locations[newIndex]["order"] = origIndex;

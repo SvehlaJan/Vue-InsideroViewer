@@ -59,15 +59,17 @@ router.beforeEach((to, from, next) => {
 
     if (to.path === '/' && isLoggedIn) {
         if (store.getters.hasSavedLocations) {
-            const firstLocation = store.getters.savedLocations.values().next().value
+            const firstLocation = store.getters.savedLocationsArray[0];
+            const query = {
+                country: firstLocation.country?.value,
+                region: firstLocation.region?.value,
+                city: firstLocation.city?.value,
+                neighborhood: firstLocation.neighborhood?.value,
+            };
+            Object.keys(query).forEach((key) => (query[key] == null || query[key] === undefined) && delete query[key]);
             next({
                 path: '/offers',
-                query: {
-                    country: firstLocation.country?.value,
-                    region: firstLocation.region?.value,
-                    city: firstLocation.city?.value,
-                    neighborhood: firstLocation.neighborhood?.value,
-                },
+                query: query,
             })
         } else {
             next('/settings')
