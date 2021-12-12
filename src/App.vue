@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <SiteNav/>
-    <router-view/>
+    <SiteNav />
+    <router-view />
   </div>
 </template>
 
@@ -9,9 +9,9 @@
 import SiteNav from "@/components/SiteNav";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     SiteNav
-  },
-}
+  }
+};
 </script>

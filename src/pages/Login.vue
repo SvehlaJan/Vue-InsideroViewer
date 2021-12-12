@@ -1,14 +1,20 @@
 <template>
   <div>
     <b-container v-if="showLoginForm">
-      <b-modal id="modal-location" size="lg" title="Reset password" @ok="handleResetPassword">
+      <b-modal
+        id="modal-location"
+        size="lg"
+        title="Reset password"
+        @ok="handleResetPassword"
+      >
         <form ref="form" @submit.stop.prevent="handleResetPassword">
           <b-form-input
-              id="input-password-reset"
-              type="email"
-              placeholder="Your email"
-              v-model="passwordResetEmail"
-              required>
+            id="input-password-reset"
+            v-model="passwordResetEmail"
+            type="email"
+            placeholder="Your email"
+            required
+          >
           </b-form-input>
         </form>
       </b-modal>
@@ -16,11 +22,12 @@
       <h1 class="mt-4">Welcome</h1>
 
       <EmailCredentialsForm
-          @submitForm="signInWithEmailAndPassword"
-          :error-message="errorMessage"
-          :show-error="showError"
-          :show-success="showSuccess"
-          submit-button-label="Login"/>
+        :error-message="errorMessage"
+        :show-error="showError"
+        :show-success="showSuccess"
+        submit-button-label="Login"
+        @submitForm="signInWithEmailAndPassword"
+      />
 
       <div class="mt-2">
         <b-link v-b-modal="'modal-location'">Forgot Password</b-link>
@@ -31,7 +38,9 @@
       <b-container class="p-0 mt-2">
         <b-link class="mr-2" @click="toggleForm()">Create an Account</b-link>
         /
-        <b-link class="ml-2" @click="signInAnonymously()">Anonymous Login</b-link>
+        <b-link class="ml-2" @click="signInAnonymously()"
+          >Anonymous Login</b-link
+        >
       </b-container>
     </b-container>
 
@@ -39,11 +48,12 @@
       <h1 class="mt-4">Get Started</h1>
 
       <EmailCredentialsForm
-          @submitForm="signUpWithEmailAndPassword"
-          :error-message="errorMessage"
-          :show-error="showError"
-          :show-success="showSuccess"
-          submit-button-label="Register"/>
+        :error-message="errorMessage"
+        :show-error="showError"
+        :show-success="showSuccess"
+        submit-button-label="Register"
+        @submitForm="signUpWithEmailAndPassword"
+      />
 
       <div class="mt-2">
         <b-link @click="toggleForm()">Back to Log In</b-link>
@@ -54,7 +64,7 @@
 
 <script>
 import EmailCredentialsForm from "@/components/EmailCredentialsForm";
-import {auth} from "@/firebase";
+import { auth } from "@/firebase";
 
 export default {
   components: {
@@ -63,64 +73,64 @@ export default {
   data() {
     return {
       showLoginForm: true,
-      passwordResetEmail: '',
+      passwordResetEmail: "",
       showSuccess: false,
       showError: false,
-      errorMessage: '',
-    }
+      errorMessage: "",
+    };
   },
   methods: {
     toggleForm() {
-      this.showLoginForm = !this.showLoginForm
-      this.showError = false
+      this.showLoginForm = !this.showLoginForm;
+      this.showError = false;
     },
     async signInWithEmailAndPassword(formData) {
-      this.showError = false
+      this.showError = false;
       try {
-        await this.$store.dispatch('signInWithEmailAndPassword', {
+        await this.$store.dispatch("signInWithEmailAndPassword", {
           email: formData.email,
-          password: formData.password
-        })
+          password: formData.password,
+        });
       } catch (error) {
         if (error.code) {
-          this.errorMessage = error.message
-          this.showError = true
+          this.errorMessage = error.message;
+          this.showError = true;
         } else {
-          console.error("Login error: ", error)
+          console.error("Login error: ", error);
         }
       }
     },
     async signUpWithEmailAndPassword(formData) {
-      this.showError = false
+      this.showError = false;
       try {
-        await this.$store.dispatch('signUpWithEmailAndPassword', {
+        await this.$store.dispatch("signUpWithEmailAndPassword", {
           email: formData.email,
           password: formData.password,
-        })
+        });
       } catch (error) {
         if (error.code) {
-          this.errorMessage = error.message
-          this.showError = true
+          this.errorMessage = error.message;
+          this.showError = true;
         } else {
-          console.error("Signup error: ", error)
+          console.error("Signup error: ", error);
         }
       }
     },
     async signInAnonymously() {
-      this.showError = false
+      this.showError = false;
       try {
-        await this.$store.dispatch('signInAnonymously')
+        await this.$store.dispatch("signInAnonymously");
       } catch (error) {
         if (error.code) {
-          this.errorMessage = error.message
-          this.showError = true
+          this.errorMessage = error.message;
+          this.showError = true;
         } else {
-          console.error("Anonymous signup error: ", error)
+          console.error("Anonymous signup error: ", error);
         }
       }
     },
     async handleResetPassword() {
-      this.errorMessage = '';
+      this.errorMessage = "";
 
       try {
         await auth.sendPasswordResetEmail(this.email);
@@ -129,7 +139,7 @@ export default {
         this.showError = true;
         this.errorMessage = err.message;
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>

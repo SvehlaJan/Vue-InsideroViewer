@@ -1,73 +1,100 @@
 <template>
-  <b-table :items="offers"
-           :fields="fields"
-           :sort-by.sync="sortBy"
-           :sort-desc.sync="sortDesc"
-           :busy="offersLoading"
-           ref="table"
-           selectable
-           select-mode="single"
-           @row-clicked="item=>$set(item, '_showDetails', !item._showDetails)"
-           small
-           hover
-           striped
-           stacked="sm">
+  <b-table
+    ref="table"
+    :items="offers"
+    :fields="fields"
+    :sort-by.sync="sortBy"
+    :sort-desc.sync="sortDesc"
+    :busy="offersLoading"
+    selectable
+    select-mode="single"
+    small
+    hover
+    striped
+    stacked="sm"
+    @row-clicked="item => $set(item, '_showDetails', !item._showDetails)"
+  >
+    <template #cell(address)="data">
+      <b-link :href="data.item.urls[0].url"> {{ data.item.address }}</b-link>
 
-    <template #cell(id)="data">
-      <b-link @click="showEmbeddedPage(data.item)"> {{ data.item.id }}</b-link>
+      <!-- <b-button
+        size="sm"
+        variant="outline-primary"
+        :href="data.item.urls[0].url"
+      >
+        <b-icon icon="link45deg"></b-icon>
+      </b-button> -->
     </template>
 
     <template #cell(controls)="data">
-      <b-button size="sm"
-                :variant="data.item.favorite ? 'primary' : 'outline-primary'"
-                @click="toggleFavorite(data.item)">
+      <b-button
+        size="sm"
+        :variant="data.item.favorite ? 'primary' : 'outline-primary'"
+        @click="toggleFavorite(data.item)"
+      >
         <b-icon icon="heart"></b-icon>
       </b-button>
 
-      <b-button size="sm"
-                class="ml-2"
-                :variant="data.item.archived ? 'dark' : 'outline-dark'"
-                @click="toggleArchive(data.item)">
-        <b-icon icon="archive"></b-icon>
+      <b-button
+        size="sm"
+        class="ml-2"
+        :variant="data.item.trash ? 'dark' : 'outline-dark'"
+        @click="toggleTrash(data.item)"
+      >
+        <b-icon icon="trash"></b-icon>
       </b-button>
     </template>
 
     <template #row-details="row">
       <b-row>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.urls">
+        <b-col v-if="row.item.urls" cols="12" sm="6" no-gutters>
           <b-card>
-            <b-table :items="row.item.urls" :fields="[{key: 'url', name: 'url', tdClass: 'truncate'}]">
+            <b-table
+              :items="row.item.urls"
+              :fields="[{ key: 'url', name: 'url', tdClass: 'truncate' }]"
+            >
               <template #cell(url)="data">
-                <b-link style target="_blank" rel="noopener noreferrer" :href="`${data.value}`">{{
-                    data.value
-                  }}
+                <b-link
+                  style
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  :href="`${data.value}`"
+                  >{{ data.value }}
                 </b-link>
               </template>
             </b-table>
           </b-card>
         </b-col>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.prices">
+        <b-col v-if="row.item.prices" cols="12" sm="6" no-gutters>
           <b-card>
-            <b-table :items="row.item.prices" thead-class="hidden_header"></b-table>
+            <b-table
+              :items="row.item.prices"
+              thead-class="hidden_header"
+            ></b-table>
           </b-card>
         </b-col>
-        <b-col cols="12" sm="6" no-gutters v-if="row.item.updates">
+        <b-col v-if="row.item.updates" cols="12" sm="6" no-gutters>
           <b-card>
-            <b-table :items="row.item.updates" thead-class="hidden_header"></b-table>
+            <b-table
+              :items="row.item.updates"
+              thead-class="hidden_header"
+            ></b-table>
           </b-card>
         </b-col>
         <b-col cols="12" sm="6" no-gutters>
           <b-card>
             <b-aspect aspect="10:7">
               <GmapMap
-                  :center="row.item.marker.position"
-                  :zoom="11"
-                  :options="{gestureHandling: 'greedy'}"
-                  map-type-id="terrain"
-                  style="width: 100%; height: 100%">
+                :center="row.item.marker.position"
+                :zoom="11"
+                :options="{ gestureHandling: 'greedy' }"
+                map-type-id="terrain"
+                style="width: 100%; height: 100%"
+              >
                 <GmapMarker
-                    :key="row.item.id"
-                    :position="row.item.marker.position"/>
+                  :key="row.item.id"
+                  :position="row.item.marker.position"
+                />
               </GmapMap>
             </b-aspect>
           </b-card>
@@ -77,39 +104,52 @@
   </b-table>
 </template>
 <script>
-
-import {mapGetters} from "vuex";
+import { mapGetters } from "vuex";
 
 export default {
-  name: 'OffersTable',
+  name: "OffersTable",
   props: {
-    fields: {},
-    offers: {},
-  },
-  computed: {
-    ...mapGetters(['offersLoading']),
+    offers: {}
   },
   data() {
     return {
-      sortBy: 'updated',
+      sortBy: "updated",
       sortDesc: true,
-    }
+      fields: [
+        { key: "address", sortable: false },
+        { key: "current_price", sortable: true, label: "Price" },
+        { key: "published", sortable: true },
+        { key: "updated", sortable: true },
+        { key: "type", sortable: false },
+        { key: "rooms", sortable: false },
+        { key: "space", sortable: true },
+        { key: "land", sortable: true },
+        { key: "controls", sortable: false, label: "" }
+      ]
+    };
+  },
+  computed: {
+    ...mapGetters(["offersLoading"])
   },
   methods: {
-    showEmbeddedPage(offer) {
-      this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(offer))
-      this.$store.dispatch('setSelectedOffer', offer)
+    async showEmbeddedPage(offer) {
+      this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(offer));
+      this.$store.dispatch("setSelectedOffer", offer);
     },
-    toggleFavorite(offer) {
-      const newValue = (offer.category === 1) ? 0 : 1;
-      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
+    async toggleFavorite(offer) {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
+        id: offer.id,
+        favorite: !offer.favorite
+      });
     },
-    toggleArchive(offer) {
-      const newValue = (offer.category === 10) ? 0 : 10;
-      this.$store.dispatch('updateOfferCategory', {offer: offer, category: newValue})
+    async toggleTrash(offer) {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
+        id: offer.id,
+        trash: !offer.trash
+      });
     }
   }
-}
+};
 </script>
 
 <style>
