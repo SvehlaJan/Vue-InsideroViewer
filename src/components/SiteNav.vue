@@ -17,7 +17,7 @@
               variant="outline-primary"
               :pressed="
                 state.value === $route.query.active ||
-                  ($route.query.type == null && state.value === 'all')
+                ($route.query.type == null && state.value === 'all')
               "
               @click="setState(state)"
             >
@@ -33,7 +33,7 @@
               variant="outline-primary"
               :pressed="
                 category.value === $route.query.type ||
-                  ($route.query.type == null && category.value === 'all')
+                ($route.query.type == null && category.value === 'all')
               "
               @click="setCategory(category)"
             >
@@ -52,15 +52,14 @@
               placeholder="Min m2"
               type="number"
               min="0"
-              debounce="400"
             >
             </b-form-input>
           </b-form-group>
 
-          <nav v-if="userLocations != null" class="mt-4">
+          <nav v-if="hasSavedLocations" class="mt-4">
             <b-nav vertical pills>
               <b-nav-item
-                v-for="location in userLocations"
+                v-for="location in savedLocationsArray"
                 :key="location.city.value"
                 :active="isLocationActive(location)"
                 @click="setLocation(location)"
@@ -90,12 +89,7 @@
     </b-sidebar>
 
     <b-navbar toggleable="md" type="dark" variant="primary">
-      <b-button
-        v-if="hasLocations"
-        v-b-toggle.sidebar-nav
-        class="mr-4"
-        variant="outline-light"
-      >
+      <b-button v-b-toggle.sidebar-nav class="mr-4" variant="outline-light">
         <b-icon icon="list"></b-icon>
       </b-button>
 
@@ -115,26 +109,30 @@ export default {
         { text: "House", value: "house" },
         { text: "Flat", value: "flat" },
         { text: "Land", value: "land" },
-        { text: "All", value: "all" },
+        { text: "All", value: "all" }
       ],
       propertyStates: [
         { text: "Active", value: "true" },
         { text: "Inactive", value: "false" },
-        { text: "All", value: "all" },
+        { text: "All", value: "all" }
       ],
-      spaceMin: 0,
+      spaceMin: this.$store.state.spaceMin,
     };
+  },
+  computed: {
+    ...mapGetters([
+      "savedLocations",
+      "hasSavedLocations",
+      "isAuthenticated",
+      "isAnonymousUser"
+    ]),
+    savedLocationsArray() {
+      return Array.from(this.savedLocations.values());
+    }
   },
   watch: {
     spaceMin: function(val, oldVal) {
-      this.setSpaceMin(val);
-    },
-  },
-  computed: {
-    ...mapState(["userProfile"]),
-    ...mapGetters(["userLocations", "isAuthenticated", "isAnonymousUser"]),
-    hasLocations() {
-      return !_.isEmpty(this.userLocations);
+      this.setSpaceMinDebounced(val);
     },
   },
   methods: {
@@ -159,11 +157,9 @@ export default {
       newQuery.active = active.value;
       this.$router.push({ path: "/offers", query: newQuery });
     },
-    setSpaceMin(spaceMin) {
-      let newQuery = { ...this.$route.query };
-      newQuery.spaceMin = spaceMin > 0 ? spaceMin : undefined;
-      this.$router.push({ path: "/offers", query: newQuery });
-    },
+    setSpaceMinDebounced: _.debounce(function (spaceMin) {
+      this.$store.commit("setSpaceMin", spaceMin);
+    }, 400),
     isLocationActive(location) {
       let match = true;
       let queryLocation = this.$route.query;
@@ -193,7 +189,7 @@ export default {
       } else {
         return `${location.country.text}`;
       }
-    },
-  },
+    }
+  }
 };
 </script>

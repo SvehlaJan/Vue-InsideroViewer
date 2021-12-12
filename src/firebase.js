@@ -27,16 +27,33 @@ function usersOfferHistory(userId) {
   return usersCollection.doc(userId).collection("offersHistory");
 }
 
+function usersSavedLocations(userId) {
+  return usersCollection.doc(userId).collection("savedLocations");
+}
+
 async function getUsersOfferHistory(userId) {
   const querySnapshot = await usersOfferHistory(userId).get();
   const offersHistory = new Map();
-  // const offersHistory = {};
   querySnapshot.forEach((doc) => {
     offersHistory.set(doc.id, doc.data());
-    // offersHistory[doc.id] = doc.data();
   });
   return offersHistory;
 }
+
+
+async function getUsersSavedLocations(userId) {
+  const querySnapshot = await usersSavedLocations(userId).get();
+  const savedLocations = new Map();
+  querySnapshot.forEach((doc) => {
+    savedLocations.set(doc.id, doc.data());
+  });
+  return savedLocations;
+}
+
+async function deleteUsersSavedLocation(userId, locationId) {
+  await usersSavedLocations(userId).doc(locationId).delete();
+}
+
 
 // export utils/refs
 export {
@@ -46,4 +63,7 @@ export {
   usersCollection,
   usersOfferHistory,
   getUsersOfferHistory,
+  usersSavedLocations,
+  getUsersSavedLocations,
+  deleteUsersSavedLocation,
 };

@@ -10,11 +10,14 @@ Vue.use(Vuex);
 export const store = new Vuex.Store({
   state: {
     userProfile: {},
-    offersHistory: {},
+    offersHistory: new Map(),
+    savedLocations: new Map(),
     rawOffers: {},
     parsedOffers: { favorites: [], new: [], seen: [], trash: [] },
     offersLoading: false,
     selectedOffer: {},
+    spaceMin: 75,
+    lastQuery: "",
 
     locationSearchCountries: [],
     locationSearchRegions: [],
@@ -23,43 +26,42 @@ export const store = new Vuex.Store({
   },
   mutations: {
     setUserProfile(state, val) {
-      console.log("setting user profile:", val);
       Vue.set(state, "userProfile", val);
     },
     setOffersHistory(state, val) {
-      // console.log("setting offers history:", val);
       Vue.set(state, "offersHistory", val);
     },
+    setSavedLocations(state, val) {
+      Vue.set(state, "savedLocations", val);
+    },
     setRawOffers(state, val) {
-      // console.log("setting raw offers:", val)
       Vue.set(state, "rawOffers", val);
     },
     setParsedOffers(state, val) {
-      // console.log("setting parsed offers:", val)
       Vue.set(state, "parsedOffers", val);
     },
     setSelectedOffer(state, val) {
-      // console.log("setting selected offer:", val)
       state.selectedOffer = val;
     },
+    setSpaceMin(state, val) {
+      state.spaceMin = val;
+    },
+    setLastQuery(state, val) {
+      state.lastQuery = val;
+    },
     setOffersLoading(state, val) {
-      // console.log("setting offers loading:", val)
       state.offersLoading = val;
     },
     setLocationSearchCountries(state, val) {
-      // console.log("setting location search results:", val)
       Vue.set(state, "locationSearchCountries", val);
     },
     setLocationSearchRegions(state, val) {
-      // console.log("setting location search regions results:", val)
       Vue.set(state, "locationSearchRegions", val);
     },
     setLocationSearchCities(state, val) {
-      // console.log("setting location search cities results:", val)
       Vue.set(state, "locationSearchCities", val);
     },
     setLocationSearchNeighborhoods(state, val) {
-      // console.log("setting location search neighborhoods results:", val)
       Vue.set(state, "locationSearchNeighborhoods", val);
     }
   },
@@ -68,8 +70,6 @@ export const store = new Vuex.Store({
       const { user } = await fb.auth.signInAnonymously();
       await fb.usersCollection.doc(user.uid).set({
         apiKey: "",
-        userLocations: [],
-        offersHistory: []
       });
       dispatch("fetchUserProfile", user);
     },
@@ -87,8 +87,6 @@ export const store = new Vuex.Store({
       );
       await fb.usersCollection.doc(user.uid).set({
         apiKey: "",
-        userLocations: [],
-        offersHistory: []
       });
       dispatch("fetchUserProfile", user);
     },
@@ -119,6 +117,7 @@ export const store = new Vuex.Store({
       });
 
       await dispatch("fetchOffersHistory", user.uid);
+      await dispatch("fetchSavedLocations", user.uid);
 
       if (router.currentRoute.path === "/login") {
         await router.push("/");
@@ -138,7 +137,10 @@ export const store = new Vuex.Store({
     async setSelectedOffer({ commit }, offer) {
       commit("setSelectedOffer", offer);
     },
-    async updateOfferState({ dispatch, commit, state }, offer) {
+    async setSpaceMin({ commit }, spaceMin) {
+      commit("setSpaceMin", spaceMin);
+    },
+    async insertOrUpdateOfferState({ dispatch, commit, state }, offer) {
       commit("setOffersLoading", true);
       const userId = fb.auth.currentUser.uid;
       await fb
@@ -157,8 +159,27 @@ export const store = new Vuex.Store({
       const offersHistory = await fb.getUsersOfferHistory(userId);
       commit("setOffersHistory", offersHistory);
     },
+    async insertOrUpdateSavedLocation({ dispatch }, location) {
+      const userId = fb.auth.currentUser.uid;
+      const locationId = `${location.country?.value}-${location.region?.value}-${location.city?.value}-${location.neighborhood?.value}`;
+      await fb
+        .usersSavedLocations(userId)
+        .doc(locationId)
+        .set(location, { merge: true });
+      await dispatch("fetchSavedLocations", userId);
+    },
+    async fetchSavedLocations({ commit }, userId) {
+      const savedLocations = await fb.getUsersSavedLocations(userId);
+      commit("setSavedLocations", savedLocations);
+    },
+    async deleteSavedLocation({ dispatch }, location) {
+      const userId = fb.auth.currentUser.uid;
+      const locationId = `${location.country?.value}-${location.region?.value}-${location.city?.value}-${location.neighborhood?.value}`;
+      await fb.deleteUsersSavedLocation(userId, locationId);
+      await dispatch("fetchSavedLocations", userId);
+    },
     async fetchOffers({ commit, state }, query) {
-      if (query != null && state.userProfile?.apiKey) {
+      if (query != null && state.userProfile?.apiKey && query !== state.lastQuery) {
         commit("setOffersLoading", true);
         const params = {
           api_key: state.userProfile.apiKey,
@@ -168,31 +189,34 @@ export const store = new Vuex.Store({
           neighborhood: query.neighborhood,
           type: query.type === "all" ? null : query.type,
           active: query.active === "all" ? null : query.active,
-          spaceMin: query.spaceMin,
+          spaceMin: state.spaceMin,
           limit: 250,
           sortBy: "id",
           offer: "sell"
         };
         Object.keys(params).forEach(
-          key => params[key] == null && delete params[key]
+          (key) => params[key] == null && delete params[key]
         );
         const paramsStr = new URLSearchParams(params).toString();
         let url = "/offers?" + paramsStr;
         try {
-          const response = await axios.get(url);
-          const rawOffers = response["data"]["results"];
-          console.log("New offers received: ", Object.keys(rawOffers).length);
+          // const response = await axios.get(url);
+          // const rawOffers = response["data"]["results"];
+          // console.log("New offers received: ", Object.keys(rawOffers).length);
 
-          const parsedOffers = parseRawOffers(
-            Object.values(rawOffers),
-            state.offersHistory
-          );
-          commit("setRawOffers", Object.values(rawOffers));
-          commit("setParsedOffers", parsedOffers);
-          console.log("Parsing & Saving - Done");
+          // const parsedOffers = parseRawOffers(
+          //   Object.values(rawOffers),
+          //   state.offersHistory
+          // );
+          // commit("setRawOffers", Object.values(rawOffers));
+          // commit("setParsedOffers", parsedOffers);
+          // console.log("Parsing & Saving - Done");
+          commit("setLastQuery", query);
         } finally {
           commit("setOffersLoading", false);
         }
+      } else {
+        console.log("No new offers");
       }
     },
     async fetchCountries({ commit, state }) {
@@ -232,22 +256,26 @@ export const store = new Vuex.Store({
     }
   },
   getters: {
-    userLocations: state => state.userProfile?.userLocations,
-    offersLoading: state => state.offersLoading,
-    selectedOffer: state => state.selectedOffer,
-    parsedOffers: state => state.parsedOffers,
-    isAuthenticated: state =>
+    offersLoading: (state) => state.offersLoading,
+    selectedOffer: (state) => state.selectedOffer,
+    spaceMin: (state) => state.spaceMin,
+    hasSavedLocations: (state) => state.savedLocations.size > 0,
+    savedLocations: (state) => state.savedLocations || new Map(),
+    parsedOffers: (state) => state.parsedOffers,
+    isAuthenticated: (state) =>
       (state.userProfile != null) & (fb.auth.currentUser != null),
-    isAnonymousUser: state =>
+    isAnonymousUser: (state) =>
       (state.userProfile != null) & fb.auth.currentUser.isAnonymous
   }
 });
 
 async function fetchLocationSearchData(path, params) {
-  Object.keys(params).forEach(key => params[key] == null && delete params[key]);
+  Object.keys(params).forEach(
+    (key) => params[key] == null && delete params[key]
+  );
   const paramsStr = new URLSearchParams(params).toString();
   const response = await axios.get(path + "?" + paramsStr);
-  return Object.values(response.data.results).map(function(item) {
+  return Object.values(response.data.results).map(function (item) {
     return {
       value: item["general"]["id"],
       text: item["general"]["name"]
@@ -257,7 +285,7 @@ async function fetchLocationSearchData(path, params) {
 
 function parseRawOffers(offersList, offersHistory) {
   const parsedOffers = { favorites: [], new: [], seen: [], trash: [] };
-  offersList.forEach(function(item) {
+  offersList.forEach(function (item) {
     let offerId = item["general"]["id"];
     let subtype = item["general"]["subtype"] || item["general"]["type"];
     if (subtype === "commercial") {
@@ -303,7 +331,7 @@ function parseRawOffers(offersList, offersHistory) {
       : null;
     let updates =
       rawEvents && rawEvents["dataUpdates"]
-        ? rawEvents["dataUpdates"].map(function(update) {
+        ? rawEvents["dataUpdates"].map(function (update) {
             return {
               date: update.date,
               type: update.type,
@@ -311,15 +339,15 @@ function parseRawOffers(offersList, offersHistory) {
             };
           })
         : [];
-    let lastUpdatedDateStr = updates.length > 0
-      ? updates.slice(-1)[0]["date"]
-      : publishedDateStr;
+    let lastUpdatedDateStr =
+      updates.length > 0 ? updates.slice(-1)[0]["date"] : publishedDateStr;
 
     let rawSpace = item["space"];
     let roomFullStr = rawSpace?.room?.full || "";
     let roomsStr = rawSpace?.room
-      ? `${rawSpace?.room?.min || ""}/${rawSpace?.room?.max ||
-          ""}/${roomFullStr}`
+      ? `${rawSpace?.room?.min || ""}/${
+          rawSpace?.room?.max || ""
+        }/${roomFullStr}`
       : null;
     let spaceStr = rawSpace?.usable ? `${rawSpace["usable"]["min"]}m2` : null;
     let landStr = rawSpace?.land ? `${rawSpace["land"]["min"]}m2` : null;
@@ -339,8 +367,12 @@ function parseRawOffers(offersList, offersHistory) {
           position: coordinates
         }
       : null;
+    let street = item["geography"]?.readable?.street;
+    let neighborhood = item["geography"]?.readable?.neighborhood;
+    let city = item["geography"]?.readable?.city;
+    let address = `${neighborhood || street || city || ""}`;
 
-    let urls = item["urls"]["activeUrls"].map(url => ({ url: url }));
+    let urls = item["urls"]["activeUrls"].map((url) => ({ url: url }));
     const offerHistory = offersHistory.get(`${offerId}`);
 
     const offer = {
@@ -358,6 +390,7 @@ function parseRawOffers(offersList, offersHistory) {
       trash: offerHistory?.trash ?? false,
       prices: prices,
       marker: marker,
+      address: address,
       urls: urls
     };
 

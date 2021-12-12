@@ -116,14 +116,14 @@ export default {
     getSelectedOfferSortedUrls(offer) {},
     navigateToSelectedOfferNextUrl(offer) {},
     async toggleFavorite(offer) {
-      await this.$store.dispatch("updateOfferState", {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
         id: offer.id,
         favorite: !offer.favorite
       });
       await this.closeModal();
     },
     async toggleTrash(offer) {
-      await this.$store.dispatch("updateOfferState", {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
         id: offer.id,
         trash: !offer.trash
       });

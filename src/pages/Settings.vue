@@ -91,7 +91,7 @@
 
     <b-card title="Locations" class="mt-4">
       <b-table
-        :items="userLocations || []"
+        :items="savedLocationsArray"
         :fields="[
           'country',
           'region',
@@ -234,12 +234,6 @@ export default {
       500)
     };
   },
-  mounted() {
-    if (!_.isEmpty(this.userProfile?.apiKey)) {
-      this.apiKey = this.userProfile?.apiKey;
-      this.getCountries();
-    }
-  },
   computed: {
     ...mapState([
       "userProfile",
@@ -248,9 +242,12 @@ export default {
       "locationSearchCities",
       "locationSearchNeighborhoods"
     ]),
-    ...mapGetters(["userLocations"]),
+    ...mapGetters(["savedLocations", "hasSavedLocations"]),
     isApiKey() {
       return !_.isEmpty(this.apiKey);
+    },
+    savedLocationsArray() {
+      return Array.from(this.savedLocations.values());
     }
   },
   watch: {
@@ -285,12 +282,16 @@ export default {
       }
     }
   },
+  mounted() {
+    if (!_.isEmpty(this.userProfile?.apiKey)) {
+      this.apiKey = this.userProfile?.apiKey;
+      this.getCountries();
+    }
+  },
   methods: {
     async updateProfile() {
       await this.$store.dispatch("updateProfile", {
         apiKey: this.apiKey || "",
-        userLocations: this.userProfile.userLocations || [],
-        offersHistory: this.userProfile.offersHistory || []
       });
     },
     checkFormValidity() {
@@ -310,19 +311,20 @@ export default {
       }
     },
     async orderMoveDown(item) {
-      if (item.order < this.userProfile.userLocations.length - 1) {
+      if (item.order < this.savedLocations.length - 1) {
         await this.reorderItem(item, item.order + 1);
       }
     },
     async reorderItem(item, newIndex) {
-      const locations = this.userProfile.userLocations.sort(
+      const locations = this.savedLocations.sort(
         (a, b) => a.order - b.order
       );
       const origIndex = item.order;
       locations[origIndex]["order"] = newIndex;
       locations[newIndex]["order"] = origIndex;
-      this.userProfile.userLocations = locations;
-      await this.updateProfile();
+
+      await this.$store.dispatch("insertOrUpdateSavedLocation", locations[origIndex]);
+      await this.$store.dispatch("insertOrUpdateSavedLocation", locations[newIndex]);
     },
     async createAccountForAnonymousUser(formData) {
       try {
@@ -377,15 +379,15 @@ export default {
       const selectedRegion = _.find(this.locationSearchRegions, {
         value: this.regionForm.selectedItem
       });
-      const order = this.userProfile.userLocations.length;
-      this.userProfile.userLocations.push({
+      const order = this.savedLocations.size;
+
+      await this.$store.dispatch("insertOrUpdateSavedLocation", {
         country: selectedCountry,
         region: selectedRegion,
         city: this.cityForm.selectedItem,
         neighborhood: this.neighborhoodForm.selectedItem,
         order: order
       });
-      await this.updateProfile();
 
       this.cityForm = {
         selectedItem: "",
@@ -402,9 +404,7 @@ export default {
       });
     },
     async handleDeleteLocation(location) {
-      const index = this.userProfile.userLocations.indexOf(location);
-      this.userProfile.userLocations.splice(index, 1);
-      await this.updateProfile();
+      await this.$store.dispatch("deleteSavedLocation", location);
     },
     async getCountries() {
       this.resetForm(this.countryForm);

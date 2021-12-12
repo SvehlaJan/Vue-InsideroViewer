@@ -52,15 +52,14 @@ router.beforeEach((to, from, next) => {
     const isLoggedIn = auth.currentUser != null;
 
     // console.log("Requires auth: ", requiresAuth, "Logged in: ", isLoggedIn)
-    // console.log("Store: ", store.getters["userLocations"])
     if (requiresAuth && !isLoggedIn) {
         next('/login');
         return;
     }
 
     if (to.path === '/' && isLoggedIn) {
-        if (!_.isEmpty(store.getters["userLocations"])) {
-            const firstLocation = store.getters["userLocations"][0]
+        if (store.getters.hasSavedLocations) {
+            const firstLocation = store.getters.savedLocations.values().next().value
             next({
                 path: '/offers',
                 query: {

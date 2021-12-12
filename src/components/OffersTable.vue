@@ -14,8 +14,16 @@
     stacked="sm"
     @row-clicked="item => $set(item, '_showDetails', !item._showDetails)"
   >
-    <template #cell(id)="data">
-      <b-link @click="showEmbeddedPage(data.item)"> {{ data.item.id }}</b-link>
+    <template #cell(address)="data">
+      <b-link :href="data.item.urls[0].url"> {{ data.item.address }}</b-link>
+
+      <!-- <b-button
+        size="sm"
+        variant="outline-primary"
+        :href="data.item.urls[0].url"
+      >
+        <b-icon icon="link45deg"></b-icon>
+      </b-button> -->
     </template>
 
     <template #cell(controls)="data">
@@ -108,7 +116,7 @@ export default {
       sortBy: "updated",
       sortDesc: true,
       fields: [
-        { key: "id", sortable: false },
+        { key: "address", sortable: false },
         { key: "current_price", sortable: true, label: "Price" },
         { key: "published", sortable: true },
         { key: "updated", sortable: true },
@@ -129,13 +137,13 @@ export default {
       this.$store.dispatch("setSelectedOffer", offer);
     },
     async toggleFavorite(offer) {
-      await this.$store.dispatch("updateOfferState", {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
         id: offer.id,
         favorite: !offer.favorite
       });
     },
     async toggleTrash(offer) {
-      await this.$store.dispatch("updateOfferState", {
+      await this.$store.dispatch("insertOrUpdateOfferState", {
         id: offer.id,
         trash: !offer.trash
       });
