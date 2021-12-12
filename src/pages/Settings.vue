@@ -50,7 +50,7 @@
           class="mb-3"
           :data="locationSearchCities"
           :serializer="
-            s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            (s) => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           "
           placeholder="Type a city name..."
           :disabled="regionForm.selectedItem === ''"
@@ -61,7 +61,7 @@
           v-model="neighborhoodForm.searchQuery"
           :data="locationSearchNeighborhoods"
           :serializer="
-            s => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            (s) => s.text.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           "
           placeholder="Type a neighborhood name..."
           :disabled="cityForm.selectedItem === ''"
@@ -140,7 +140,7 @@
       >
     </b-card>
 
-    <b-card v-if="userProfile.isAnonymous" title="Create Account" class="mt-4">
+    <b-card v-if="isAnonymousUser" title="Create Account" class="mt-4 mb-4">
       <p>Your locations and favorite offers will be saved.</p>
       <EmailCredentialsForm
         :error-message="accountFormStatus.errorMessage"
@@ -150,7 +150,7 @@
         @submitForm="createAccountForAnonymousUser"
       />
     </b-card>
-    <b-card v-else title="Profile" class="mt-4">
+    <b-card v-else title="Profile" class="mt-4 mb-4">
       <ChangePasswordForm
         :error-message="accountFormStatus.errorMessage"
         :show-error="accountFormStatus.showError"
@@ -206,7 +206,7 @@ export default {
         searchQuery: ""
       },
       apiKey: "",
-      getCitiesDebounced: _.debounce(function(
+      getCitiesDebounced: _.debounce(function (
         countryId,
         regionId,
         citySearchQuery
@@ -216,7 +216,7 @@ export default {
         }
       },
       500),
-      getNeighborhoodsDebounced: _.debounce(function(
+      getNeighborhoodsDebounced: _.debounce(function (
         countryId,
         regionId,
         cityId,
@@ -236,13 +236,17 @@ export default {
   },
   computed: {
     ...mapState([
-      "userProfile",
       "locationSearchCountries",
       "locationSearchRegions",
       "locationSearchCities",
       "locationSearchNeighborhoods"
     ]),
-    ...mapGetters(["savedLocations", "hasSavedLocations"]),
+    ...mapGetters([
+      "savedLocations",
+      "hasSavedLocations",
+      "userApiKey",
+      "isAnonymousUser"
+    ]),
     isApiKey() {
       return !_.isEmpty(this.apiKey);
     },
@@ -251,14 +255,14 @@ export default {
     }
   },
   watch: {
-    "cityForm.searchQuery": function(newVal, oldVal) {
+    "cityForm.searchQuery": function (newVal, oldVal) {
       this.getCitiesDebounced(
         this.countryForm.selectedItem,
         this.regionForm.selectedItem,
         this.cityForm.searchQuery
       );
     },
-    "neighborhoodForm.searchQuery": function(newVal, oldVal) {
+    "neighborhoodForm.searchQuery": function (newVal, oldVal) {
       this.getNeighborhoodsDebounced(
         this.countryForm.selectedItem,
         this.regionForm.selectedItem,
@@ -266,7 +270,8 @@ export default {
         this.neighborhoodForm.searchQuery
       );
     },
-    "userProfile.apiKey": function(newValue, oldValue) {
+    userApiKey: function (newValue, oldValue) {
+      console.log("userApiKey changed");
       if (!_.isEmpty(newValue)) {
         if (_.isEmpty(oldValue)) {
           this.apiKey = newValue;
@@ -275,25 +280,21 @@ export default {
         this.getCountries();
       }
     },
-    apiKey: function(newValue, oldValue) {
-      if (this.userProfile?.apiKey != newValue) {
+    apiKey: async function (newValue, oldValue) {
+      if (this.userApiKey != newValue) {
         this.pendingApiKeyTest = true;
-        this.updateProfile();
+        await this.$store.dispatch("updateApiKey", this.apiKey);
       }
     }
   },
   mounted() {
-    if (!_.isEmpty(this.userProfile?.apiKey)) {
-      this.apiKey = this.userProfile?.apiKey;
+    console.log("userApiKey", this.userApiKey);
+    if (!_.isEmpty(this.userApiKey)) {
+      this.apiKey = this.userApiKey;
       this.getCountries();
     }
   },
   methods: {
-    async updateProfile() {
-      await this.$store.dispatch("updateProfile", {
-        apiKey: this.apiKey || "",
-      });
-    },
     checkFormValidity() {
       const valid = this.$refs.form.checkValidity();
       this.newLocationState["country"] = valid;
@@ -316,15 +317,19 @@ export default {
       }
     },
     async reorderItem(item, newIndex) {
-      const locations = this.savedLocations.sort(
-        (a, b) => a.order - b.order
-      );
+      const locations = this.savedLocations.sort((a, b) => a.order - b.order);
       const origIndex = item.order;
       locations[origIndex]["order"] = newIndex;
       locations[newIndex]["order"] = origIndex;
 
-      await this.$store.dispatch("insertOrUpdateSavedLocation", locations[origIndex]);
-      await this.$store.dispatch("insertOrUpdateSavedLocation", locations[newIndex]);
+      await this.$store.dispatch(
+        "insertOrUpdateSavedLocation",
+        locations[origIndex]
+      );
+      await this.$store.dispatch(
+        "insertOrUpdateSavedLocation",
+        locations[newIndex]
+      );
     },
     async createAccountForAnonymousUser(formData) {
       try {

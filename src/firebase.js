@@ -23,16 +23,20 @@ const authNamespace = firebase.auth;
 // collection references
 const usersCollection = db.collection("users");
 
-function usersOfferHistory(userId) {
-  return usersCollection.doc(userId).collection("offersHistory");
+function currentUsersDoc() {
+  return db.collection("users").doc(auth.currentUser.uid);
 }
 
-function usersSavedLocations(userId) {
-  return usersCollection.doc(userId).collection("savedLocations");
+function usersOfferHistory() {
+  return currentUsersDoc().collection("offersHistory");
 }
 
-async function getUsersOfferHistory(userId) {
-  const querySnapshot = await usersOfferHistory(userId).get();
+function usersSavedLocations() {
+  return currentUsersDoc().collection("savedLocations");
+}
+
+async function getUsersOfferHistory() {
+  const querySnapshot = await usersOfferHistory().get();
   const offersHistory = new Map();
   querySnapshot.forEach((doc) => {
     offersHistory.set(doc.id, doc.data());
@@ -41,8 +45,8 @@ async function getUsersOfferHistory(userId) {
 }
 
 
-async function getUsersSavedLocations(userId) {
-  const querySnapshot = await usersSavedLocations(userId).get();
+async function getUsersSavedLocations() {
+  const querySnapshot = await usersSavedLocations().get();
   const savedLocations = new Map();
   querySnapshot.forEach((doc) => {
     savedLocations.set(doc.id, doc.data());
@@ -50,8 +54,8 @@ async function getUsersSavedLocations(userId) {
   return savedLocations;
 }
 
-async function deleteUsersSavedLocation(userId, locationId) {
-  await usersSavedLocations(userId).doc(locationId).delete();
+async function deleteUsersSavedLocation(locationId) {
+  await usersSavedLocations().doc(locationId).delete();
 }
 
 
@@ -60,6 +64,7 @@ export {
   db,
   auth,
   authNamespace,
+  currentUsersDoc,
   usersCollection,
   usersOfferHistory,
   getUsersOfferHistory,

@@ -133,9 +133,12 @@ export default {
   watch: {
     spaceMin: function(val, oldVal) {
       this.setSpaceMinDebounced(val);
-    },
+    }
   },
   methods: {
+    setSpaceMinDebounced: _.debounce(async function (spaceMin) {
+      await this.$store.dispatch("setSpaceMin", spaceMin);
+    }, 500),
     logout() {
       this.$store.dispatch("logout");
     },
@@ -157,9 +160,6 @@ export default {
       newQuery.active = active.value;
       this.$router.push({ path: "/offers", query: newQuery });
     },
-    setSpaceMinDebounced: _.debounce(function (spaceMin) {
-      this.$store.commit("setSpaceMin", spaceMin);
-    }, 400),
     isLocationActive(location) {
       let match = true;
       let queryLocation = this.$route.query;

@@ -9,7 +9,7 @@ Vue.use(Vuex);
 
 export const store = new Vuex.Store({
   state: {
-    userProfile: {},
+    apiKey: "",
     offersHistory: new Map(),
     savedLocations: new Map(),
     rawOffers: {},
@@ -25,8 +25,9 @@ export const store = new Vuex.Store({
     locationSearchNeighborhoods: []
   },
   mutations: {
-    setUserProfile(state, val) {
-      Vue.set(state, "userProfile", val);
+    setApiKey(state, val) {
+      console.log("setApiKey", val);
+      state.apiKey = val;
     },
     setOffersHistory(state, val) {
       Vue.set(state, "offersHistory", val);
@@ -68,27 +69,21 @@ export const store = new Vuex.Store({
   actions: {
     async signInAnonymously({ dispatch }) {
       const { user } = await fb.auth.signInAnonymously();
-      await fb.usersCollection.doc(user.uid).set({
-        apiKey: "",
-      });
-      dispatch("fetchUserProfile", user);
+      dispatch("fetchUserProfile");
     },
     async signInWithEmailAndPassword({ dispatch }, form) {
       const { user } = await fb.auth.signInWithEmailAndPassword(
         form.email,
         form.password
       );
-      dispatch("fetchUserProfile", user);
+      dispatch("fetchUserProfile");
     },
     async signUpWithEmailAndPassword({ dispatch }, form) {
       const { user } = await fb.auth.createUserWithEmailAndPassword(
         form.email,
         form.password
       );
-      await fb.usersCollection.doc(user.uid).set({
-        apiKey: "",
-      });
-      dispatch("fetchUserProfile", user);
+      dispatch("fetchUserProfile");
     },
     async createAccountForAnonymousUser({ dispatch }, form) {
       const credential = fb.authNamespace.EmailAuthProvider.credential(
@@ -96,7 +91,7 @@ export const store = new Vuex.Store({
         form.password
       );
       const { user } = await fb.auth.currentUser.linkWithCredential(credential);
-      dispatch("fetchUserProfile", user);
+      dispatch("fetchUserProfile");
     },
     async changeUserPassword({ dispatch, state }, form) {
       const credential = fb.authNamespace.EmailAuthProvider.credential(
@@ -107,17 +102,13 @@ export const store = new Vuex.Store({
 
       // await fb.auth.currentUser.updatePassword(form.newPassword)
     },
-    async fetchUserProfile({ commit, dispatch }, user) {
-      const userProfile = await fb.usersCollection.doc(user.uid).get();
-      const userAuth = fb.auth.currentUser;
+    async fetchUserProfile({ commit, dispatch }) {
+      const userProfile = await fb.currentUsersDoc().get();
+      commit("setApiKey", userProfile.data().apiKey);
+      commit("setSpaceMin", userProfile.data().spaceMin);
 
-      await commit("setUserProfile", {
-        ...userProfile.data(),
-        isAnonymous: userAuth.isAnonymous
-      });
-
-      await dispatch("fetchOffersHistory", user.uid);
-      await dispatch("fetchSavedLocations", user.uid);
+      await dispatch("fetchOffersHistory");
+      await dispatch("fetchSavedLocations");
 
       if (router.currentRoute.path === "/login") {
         await router.push("/");
@@ -125,29 +116,28 @@ export const store = new Vuex.Store({
     },
     async logout({ commit }) {
       await fb.auth.signOut();
-      commit("setUserProfile", {});
+      commit("setApiKey", "");
+      commit("setSpaceMin", 75);
       await router.push("/login");
-    },
-    async updateProfile({ dispatch }, user) {
-      const userId = fb.auth.currentUser.uid;
-      const userRef = await fb.usersCollection.doc(userId).update(user);
-
-      dispatch("fetchUserProfile", { uid: userId });
     },
     async setSelectedOffer({ commit }, offer) {
       commit("setSelectedOffer", offer);
     },
+    async setApiKey({ commit }, apiKey) {
+      commit("setApiKey", apiKey);
+      await fb.currentUsersDoc().set({ apiKey }, { merge: true });
+    },
     async setSpaceMin({ commit }, spaceMin) {
       commit("setSpaceMin", spaceMin);
+      await fb.currentUsersDoc().set({ spaceMin }, { merge: true });
     },
     async insertOrUpdateOfferState({ dispatch, commit, state }, offer) {
       commit("setOffersLoading", true);
-      const userId = fb.auth.currentUser.uid;
       await fb
-        .usersOfferHistory(userId)
+        .usersOfferHistory()
         .doc(`${offer.id}`)
         .set(offer, { merge: true });
-      await dispatch("fetchOffersHistory", userId);
+      await dispatch("fetchOffersHistory");
       const refreshedOffers = parseRawOffers(
         state.rawOffers,
         state.offersHistory
@@ -155,34 +145,32 @@ export const store = new Vuex.Store({
       commit("setParsedOffers", refreshedOffers);
       commit("setOffersLoading", false);
     },
-    async fetchOffersHistory({ commit }, userId) {
-      const offersHistory = await fb.getUsersOfferHistory(userId);
+    async fetchOffersHistory({ commit }) {
+      const offersHistory = await fb.getUsersOfferHistory();
       commit("setOffersHistory", offersHistory);
     },
     async insertOrUpdateSavedLocation({ dispatch }, location) {
-      const userId = fb.auth.currentUser.uid;
       const locationId = `${location.country?.value}-${location.region?.value}-${location.city?.value}-${location.neighborhood?.value}`;
       await fb
-        .usersSavedLocations(userId)
+        .usersSavedLocations()
         .doc(locationId)
         .set(location, { merge: true });
-      await dispatch("fetchSavedLocations", userId);
+      await dispatch("fetchSavedLocations");
     },
-    async fetchSavedLocations({ commit }, userId) {
-      const savedLocations = await fb.getUsersSavedLocations(userId);
+    async fetchSavedLocations({ commit }) {
+      const savedLocations = await fb.getUsersSavedLocations();
       commit("setSavedLocations", savedLocations);
     },
     async deleteSavedLocation({ dispatch }, location) {
-      const userId = fb.auth.currentUser.uid;
       const locationId = `${location.country?.value}-${location.region?.value}-${location.city?.value}-${location.neighborhood?.value}`;
-      await fb.deleteUsersSavedLocation(userId, locationId);
-      await dispatch("fetchSavedLocations", userId);
+      await fb.deleteUsersSavedLocation(locationId);
+      await dispatch("fetchSavedLocations");
     },
     async fetchOffers({ commit, state }, query) {
-      if (query != null && state.userProfile?.apiKey && query !== state.lastQuery) {
+      if (query != null && state.apiKey && query !== state.lastQuery) {
         commit("setOffersLoading", true);
         const params = {
-          api_key: state.userProfile.apiKey,
+          api_key: state.apiKey,
           country: query.country,
           region: query.region,
           city: query.city,
@@ -221,7 +209,7 @@ export const store = new Vuex.Store({
     },
     async fetchCountries({ commit, state }) {
       const countries = await fetchLocationSearchData("/countries", {
-        api_key: state.userProfile.apiKey
+        api_key: state.apiKey
       });
       if (countries) {
         commit("setLocationSearchCountries", countries);
@@ -229,7 +217,7 @@ export const store = new Vuex.Store({
     },
     async fetchRegions({ commit, state }, params) {
       const regions = await fetchLocationSearchData("/regions", {
-        api_key: state.userProfile.apiKey,
+        api_key: state.apiKey,
         ...params
       });
       if (regions) {
@@ -238,7 +226,7 @@ export const store = new Vuex.Store({
     },
     async fetchCities({ commit, state }, params) {
       const cities = await fetchLocationSearchData("/cities", {
-        api_key: state.userProfile.apiKey,
+        api_key: state.apiKey,
         ...params
       });
       if (cities) {
@@ -247,7 +235,7 @@ export const store = new Vuex.Store({
     },
     async fetchNeighborhoods({ commit, state }, params) {
       const neighborhoods = await fetchLocationSearchData("/neighborhoods", {
-        api_key: state.userProfile.apiKey,
+        api_key: state.apiKey,
         ...params
       });
       if (neighborhoods) {
@@ -256,6 +244,7 @@ export const store = new Vuex.Store({
     }
   },
   getters: {
+    userApiKey: (state) => state.apiKey,
     offersLoading: (state) => state.offersLoading,
     selectedOffer: (state) => state.selectedOffer,
     spaceMin: (state) => state.spaceMin,
@@ -263,9 +252,9 @@ export const store = new Vuex.Store({
     savedLocations: (state) => state.savedLocations || new Map(),
     parsedOffers: (state) => state.parsedOffers,
     isAuthenticated: (state) =>
-      (state.userProfile != null) & (fb.auth.currentUser != null),
+      state.apiKey != "" && fb.auth.currentUser != null,
     isAnonymousUser: (state) =>
-      (state.userProfile != null) & fb.auth.currentUser.isAnonymous
+      state.apiKey != "" && fb.auth.currentUser?.isAnonymous
   }
 });
 
