@@ -145,7 +145,9 @@ export default {
       newQuery.neighborhood = location.neighborhood?.value;
       this.$router.push({ path: "/offers", query: newQuery });
     },
-    setCategory(category) {
+    async setCategory(category) {
+      await this.$store.dispatch("setPropertyType", category.value);
+      
       let newQuery = { ...this.$route.query };
       newQuery.type = category.value;
       this.$router.push({ path: "/offers", query: newQuery });

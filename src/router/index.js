@@ -60,11 +60,13 @@ router.beforeEach((to, from, next) => {
     if (to.path === '/' && isLoggedIn) {
         if (store.getters.hasSavedLocations) {
             const firstLocation = store.getters.savedLocationsArray[0];
+            const propertyType = store.getters.propertyType;
             const query = {
                 country: firstLocation.country?.value,
                 region: firstLocation.region?.value,
                 city: firstLocation.city?.value,
                 neighborhood: firstLocation.neighborhood?.value,
+                type: propertyType,
             };
             Object.keys(query).forEach((key) => (query[key] == null || query[key] === undefined) && delete query[key]);
             next({

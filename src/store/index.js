@@ -18,6 +18,7 @@ export const store = new Vuex.Store({
     offersLoading: false,
     selectedOffer: {},
     spaceMin: 75,
+    propertyType: "",
 
     locationSearchCountries: [],
     locationSearchRegions: [],
@@ -48,6 +49,9 @@ export const store = new Vuex.Store({
     },
     setSpaceMin(state, val) {
       state.spaceMin = val;
+    },
+    setPropertyType(state, val) {
+      state.propertyType = val;
     },
     setOffersLoading(state, val) {
       state.offersLoading = val;
@@ -105,6 +109,7 @@ export const store = new Vuex.Store({
       const userProfile = await fb.currentUsersDoc().get();
       commit("setApiKey", userProfile.data().apiKey);
       commit("setSpaceMin", userProfile.data().spaceMin);
+      commit("setPropertyType", userProfile.data().propertyType);
 
       await dispatch("fetchOffersHistory");
       await dispatch("fetchSavedLocations");
@@ -116,7 +121,8 @@ export const store = new Vuex.Store({
     async logout({ commit }) {
       await fb.auth.signOut();
       commit("setApiKey", "");
-      commit("setSpaceMin", 75);
+      commit("setSpaceMin", 0);
+      commit("setSpaceMin", "");
       await router.push("/login");
     },
     async setSelectedOffer({ commit }, offer) {
@@ -129,6 +135,10 @@ export const store = new Vuex.Store({
     async setSpaceMin({ commit }, spaceMin) {
       commit("setSpaceMin", spaceMin);
       await fb.currentUsersDoc().set({ spaceMin }, { merge: true });
+    },
+    async setPropertyType({ commit }, propertyType) {
+      commit("setPropertyType", propertyType);
+      await fb.currentUsersDoc().set({ propertyType }, { merge: true });
     },
     async insertOrUpdateOfferState({ dispatch, commit, state }, offer) {
       commit("setOffersLoading", true);
@@ -257,6 +267,7 @@ export const store = new Vuex.Store({
     offersLoading: (state) => state.offersLoading,
     selectedOffer: (state) => state.selectedOffer,
     spaceMin: (state) => state.spaceMin,
+    propertyType: (state) => state.propertyType,
     hasSavedLocations: (state) => state.savedLocations.size > 0,
     savedLocations: (state) => state.savedLocations || new Map(),
     savedLocationsArray: (state) => {
