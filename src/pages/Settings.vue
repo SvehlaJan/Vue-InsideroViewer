@@ -381,7 +381,7 @@ export default {
       const selectedRegion = _.find(this.locationSearchRegions, {
         value: this.regionForm.selectedItem
       });
-      const order = this.savedLocations.size;
+      const order = this.savedLocationsArray.length;
 
       await this.$store.dispatch("insertOrUpdateSavedLocation", {
         country: selectedCountry,
