@@ -78,8 +78,8 @@ router.beforeEach((to, from, next) => {
         }
     } else if (to.path === '/offers' && (!to.query.active || !to.query.type)) {
         let query = to.query
-        query["active"] = query.active || "true"
-        query["type"] = query.type || "house"
+        query["active"] = query.active || "all"
+        query["type"] = query.type || "all"
         next({
             path: to.path,
             query: query,

@@ -393,7 +393,8 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
     let city = item["geography"]?.readable?.city;
     let address = `${neighborhood || street || city || ""}`;
 
-    let urls = item["urls"]["activeUrls"].map((url) => ({ url: url }));
+    let urls = item["urls"]["activeUrls"].map((url) => ({ url: url })) ?? [];
+    let allUrls = item["urls"]["allUrls"].map((url) => ({ url: url })) ?? [];
     const offerHistory = offersHistory.get(`${offerId}`);
 
     const offer = {
@@ -412,7 +413,8 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
       prices: prices,
       marker: marker,
       address: address,
-      urls: urls
+      urls: urls,
+      allUrls: allUrls,
     };
 
     if (offer.favorite) {

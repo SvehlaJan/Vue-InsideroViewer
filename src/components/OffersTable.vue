@@ -15,7 +15,7 @@
     @row-clicked="item => $set(item, '_showDetails', !item._showDetails)"
   >
     <template #cell(address)="data">
-      <b-link :href="data.item.urls[0].url"> {{ data.item.address }}</b-link>
+      <b-link v-if="data.item.urls.length > 0" :href="data.item.urls[0].url"> {{ data.item.address }}</b-link>
 
       <!-- <b-button
         size="sm"
@@ -47,10 +47,10 @@
 
     <template #row-details="row">
       <b-row>
-        <b-col v-if="row.item.urls" cols="12" sm="6" no-gutters>
+        <b-col v-if="getUrls(row.item).length > 0" cols="12" sm="6" no-gutters>
           <b-card>
             <b-table
-              :items="row.item.urls"
+              :items="getUrls(row.item)"
               :fields="[{ key: 'url', name: 'url', tdClass: 'truncate' }]"
             >
               <template #cell(url)="data">
@@ -129,9 +129,17 @@ export default {
     };
   },
   computed: {
-    ...mapGetters(["offersLoading"])
+    ...mapGetters(["offersLoading"]),
   },
   methods: {
+    getUrls(item) {
+      console.log(item);
+      if (item.urls.length > 0) {
+        return item.urls;
+      } else {
+        return item.allUrls;
+      }
+    },
     async showEmbeddedPage(offer) {
       this.$refs.table.selectRow(this.$refs.table.sortedItems.indexOf(offer));
       this.$store.dispatch("setSelectedOffer", offer);
