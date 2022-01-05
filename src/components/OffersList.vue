@@ -82,14 +82,6 @@ export default {
     ...mapGetters(["parsedOffers", "offersLoading", "selectedOffer"]),
   },
   watch: {
-    async $route(to, from) {
-      await this.$store.dispatch("fetchOffers", to.query);
-    },
-    userProfile: async function(newValue, oldValue) {
-      if (newValue != null && !this.offers) {
-        await this.$store.dispatch("fetchOffers", this.$route.query);
-      }
-    },
     selectedOffer: async function(newValue, oldValue) {
       // if (newValue != null) {
       // if (!this.$isMobile()) {
@@ -109,7 +101,7 @@ export default {
     }
   },
   async mounted() {
-    await this.$store.dispatch("fetchOffers", this.$route.query);
+    await this.$store.dispatch("fetchOffers");
   },
   methods: {
     hasSelectedOfferMoreUrls(offer) {},

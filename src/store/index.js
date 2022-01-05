@@ -10,15 +10,24 @@ Vue.use(Vuex);
 export const store = new Vuex.Store({
   state: {
     apiKey: "",
+
+    searchParams: {
+      country: "",
+      region: "",
+      city: "",
+      neighborhood: "",
+      spaceMin: 75,
+      propertyType: "all",
+      activeFilter: "all"
+    },
+    offersLoading: false,
+
     offersHistory: new Map(),
     savedLocations: new Map(),
     browsingHistory: new Map(),
     rawOffers: {},
     parsedOffers: { favorites: [], new: [], seen: [], trash: [] },
-    offersLoading: false,
     selectedOffer: {},
-    spaceMin: 75,
-    propertyType: "",
 
     locationSearchCountries: [],
     locationSearchRegions: [],
@@ -28,6 +37,12 @@ export const store = new Vuex.Store({
   mutations: {
     setApiKey(state, val) {
       state.apiKey = val;
+    },
+    setSearchParams(state, val) {
+      Vue.set(state, "searchParams", val);
+    },
+    setOffersLoading(state, val) {
+      state.offersLoading = val;
     },
     setOffersHistory(state, val) {
       Vue.set(state, "offersHistory", val);
@@ -46,15 +61,6 @@ export const store = new Vuex.Store({
     },
     setSelectedOffer(state, val) {
       state.selectedOffer = val;
-    },
-    setSpaceMin(state, val) {
-      state.spaceMin = val;
-    },
-    setPropertyType(state, val) {
-      state.propertyType = val;
-    },
-    setOffersLoading(state, val) {
-      state.offersLoading = val;
     },
     setLocationSearchCountries(state, val) {
       Vue.set(state, "locationSearchCountries", val);
@@ -75,24 +81,15 @@ export const store = new Vuex.Store({
       dispatch("fetchUserProfile");
     },
     async signInWithEmailAndPassword({ dispatch }, form) {
-      const { user } = await fb.auth.signInWithEmailAndPassword(
-        form.email,
-        form.password
-      );
+      const { user } = await fb.auth.signInWithEmailAndPassword(form.email, form.password);
       dispatch("fetchUserProfile");
     },
     async signUpWithEmailAndPassword({ dispatch }, form) {
-      const { user } = await fb.auth.createUserWithEmailAndPassword(
-        form.email,
-        form.password
-      );
+      const { user } = await fb.auth.createUserWithEmailAndPassword(form.email, form.password);
       dispatch("fetchUserProfile");
     },
     async createAccountForAnonymousUser({ dispatch }, form) {
-      const credential = fb.authNamespace.EmailAuthProvider.credential(
-        form.email,
-        form.password
-      );
+      const credential = fb.authNamespace.EmailAuthProvider.credential(form.email, form.password);
       const { user } = await fb.auth.currentUser.linkWithCredential(credential);
       dispatch("fetchUserProfile");
     },
@@ -108,11 +105,21 @@ export const store = new Vuex.Store({
     async fetchUserProfile({ commit, dispatch }) {
       const userProfile = await fb.currentUsersDoc().get();
       commit("setApiKey", userProfile.data().apiKey);
-      commit("setSpaceMin", userProfile.data().spaceMin);
-      commit("setPropertyType", userProfile.data().propertyType);
 
       await dispatch("fetchOffersHistory");
       await dispatch("fetchSavedLocations");
+
+      let searchParams = {
+        spaceMin: userProfile.data().searchParams?.spaceMin || 80,
+        propertyType: userProfile.data().searchParams?.propertyType || "all",
+        activeFilter: userProfile.data().searchParams?.activeFilter || "all",
+        country: userProfile.data().searchParams?.country || "",
+        region: userProfile.data().searchParams?.region || "",
+        city: userProfile.data().searchParams?.city || "",
+        neighborhood: userProfile.data().searchParams?.neighborhood || ""
+      };
+
+      commit("setSearchParams", searchParams);
 
       if (router.currentRoute.path === "/login") {
         await router.push("/");
@@ -121,36 +128,41 @@ export const store = new Vuex.Store({
     async logout({ commit }) {
       await fb.auth.signOut();
       commit("setApiKey", "");
-      commit("setSpaceMin", 0);
-      commit("setSpaceMin", "");
+      commit("setSearchParams", {});
       await router.push("/login");
-    },
-    async setSelectedOffer({ commit }, offer) {
-      commit("setSelectedOffer", offer);
     },
     async setApiKey({ commit }, apiKey) {
       commit("setApiKey", apiKey);
       await fb.currentUsersDoc().set({ apiKey }, { merge: true });
     },
-    async setSpaceMin({ commit }, spaceMin) {
-      commit("setSpaceMin", spaceMin);
-      await fb.currentUsersDoc().set({ spaceMin }, { merge: true });
+    async setSearchParams({ commit, dispatch, state }, params) {
+      console.log(`setSearchParams action: ${JSON.stringify(params)}`);
+      const searchParams = { ...state.searchParams, ...params };
+      commit("setSearchParams", searchParams);
+
+      Object.keys(params).forEach(
+        (key) => (params[key] == null || params[key] === undefined) && delete params[key]
+      );
+      await fb.currentUsersDoc().set({ searchParams: params }, { merge: true });
+
+      await dispatch("fetchOffers");
     },
-    async setPropertyType({ commit }, propertyType) {
-      commit("setPropertyType", propertyType);
-      await fb.currentUsersDoc().set({ propertyType }, { merge: true });
+    async setSelectedOffer({ commit }, offer) {
+      commit("setSelectedOffer", offer);
     },
-    async insertOrUpdateOfferState({ dispatch, commit, state }, offer) {
+    async insertOrUpdateOfferState({ dispatch, commit, state, getters }, offer) {
       commit("setOffersLoading", true);
       await fb.usersOfferHistory().doc(`${offer.id}`).set(offer, { merge: true });
       await dispatch("fetchOffersHistory");
 
-      const lastOpenedTimestamp = await getLastOpenedTimestamp(this.$route.query);
+      const entryId = getBrowsingHistoryId(getters.searchParams);
+      const browsingHistory = await fb.usersBrowsingHistory().doc(entryId).get();
+      const lastOpenedTimestamp = browsingHistory?.data()?.lastOpened ?? 0;
 
       const refreshedOffers = parseRawOffers(
         state.rawOffers,
         state.offersHistory,
-        lastOpenedTimestamp,
+        lastOpenedTimestamp
       );
       commit("setParsedOffers", refreshedOffers);
       commit("setOffersLoading", false);
@@ -161,10 +173,7 @@ export const store = new Vuex.Store({
     },
     async insertOrUpdateSavedLocation({ dispatch }, location) {
       const locationId = `${location.country?.value}-${location.region?.value}-${location.city?.value}-${location.neighborhood?.value}`;
-      await fb
-        .usersSavedLocations()
-        .doc(locationId)
-        .set(location, { merge: true });
+      await fb.usersSavedLocations().doc(locationId).set(location, { merge: true });
       await dispatch("fetchSavedLocations");
     },
     async fetchSavedLocations({ commit }) {
@@ -176,51 +185,61 @@ export const store = new Vuex.Store({
       await fb.deleteUsersSavedLocation(locationId);
       await dispatch("fetchSavedLocations");
     },
-    async fetchOffers({ commit, state }, query) {
-      if (query != null && state.apiKey) {
+    async fetchOffers({ commit, state, getters }) {
+      if (state.apiKey) {
         commit("setOffersLoading", true);
         const params = {
           api_key: state.apiKey,
-          country: query.country,
-          region: query.region,
-          city: query.city,
-          neighborhood: query.neighborhood,
-          type: query.type === "all" ? null : query.type,
-          active: query.active === "all" ? null : query.active,
-          spaceMin: state.spaceMin,
+          country: state.searchParams.country,
+          region: state.searchParams.region,
+          city: state.searchParams.city,
+          neighborhood: state.searchParams.neighborhood,
+          type: state.searchParams.propertyType === "all" ? null : state.searchParams.propertyType,
+          active:
+            state.searchParams.activeFilter === "all" ? null : state.searchParams.activeFilter,
+          spaceMin: state.searchParams.spaceMin,
           limit: 250,
           sortBy: "id",
           offer: "sell"
         };
         Object.keys(params).forEach(
-          (key) => params[key] == null && delete params[key]
+          (key) =>
+            (params[key] == null || params[key] == undefined || params[key] == "") &&
+            delete params[key]
         );
         const paramsStr = new URLSearchParams(params).toString();
         let url = "/offers?" + paramsStr;
-        const lastOpenedTimestamp = await getLastOpenedTimestamp(query);
 
         try {
+          // console.log(`fetchOffers: searchParams: ${JSON.stringify(state.searchParams)}`);
+          // console.log(`fetchOffers: url: ${url}`);
           let timestamp = Date.now();
           const response = await axios.get(url);
           const rawOffers = response["data"]["results"];
 
-          console.log("New offers received: ", Object.keys(rawOffers).length, " It took ", Date.now() - timestamp, "ms");
+          console.log(
+            `New offers received: ${Object.keys(rawOffers).length} and it took ${
+              Date.now() - timestamp
+            }ms`
+          );
           timestamp = Date.now();
 
+          const entryId = getBrowsingHistoryId(getters.searchParams);
+          const browsingHistory = await fb.usersBrowsingHistory().doc(entryId).get();
+          const lastOpenedTimestamp = browsingHistory?.data()?.lastOpened ?? 0;
           const parsedOffers = parseRawOffers(
             Object.values(rawOffers),
             state.offersHistory,
-            lastOpenedTimestamp,
+            lastOpenedTimestamp
           );
           commit("setRawOffers", Object.values(rawOffers));
           commit("setParsedOffers", parsedOffers);
 
-          console.log("Parsing & Saving - Done, It took ", Date.now() - timestamp, "ms");
-          timestamp = Date.now();
+          // console.log("Parsing & Saving - Done, It took ", Date.now() - timestamp, "ms");
+          // timestamp = Date.now();
 
-          const queryStr = new URLSearchParams(query).toString();
-          fb.usersBrowsingHistory().doc(queryStr).set({"lastOpened": Date.now()}, { merge: true });;
-          console.log("Saving browsing history - Done, It took ", Date.now() - timestamp, "ms");
+          fb.usersBrowsingHistory().doc(entryId).set({ lastOpened: Date.now() }, { merge: true });
+          // console.log("Saving browsing history - Done, It took ", Date.now() - timestamp, "ms");
         } finally {
           commit("setOffersLoading", false);
         }
@@ -264,10 +283,12 @@ export const store = new Vuex.Store({
   },
   getters: {
     userApiKey: (state) => state.apiKey,
+    searchParams: (state) => state.searchParams,
     offersLoading: (state) => state.offersLoading,
     selectedOffer: (state) => state.selectedOffer,
-    spaceMin: (state) => state.spaceMin,
-    propertyType: (state) => state.propertyType,
+    spaceMin: (state) => state.searchParams.spaceMin,
+    propertyType: (state) => state.searchParams.propertyType,
+    activeFilter: (state) => state.searchParams.activeFilter,
     hasSavedLocations: (state) => state.savedLocations.size > 0,
     savedLocations: (state) => state.savedLocations || new Map(),
     savedLocationsArray: (state) => {
@@ -277,24 +298,19 @@ export const store = new Vuex.Store({
       return locations;
     },
     parsedOffers: (state) => state.parsedOffers,
-    isAuthenticated: (state) =>
-      state.apiKey != "" && fb.auth.currentUser != null,
-    isAnonymousUser: (state) =>
-      state.apiKey != "" && fb.auth.currentUser?.isAnonymous
+    isAuthenticated: (state) => state.apiKey != "" && fb.auth.currentUser != null,
+    isAnonymousUser: (state) => state.apiKey != "" && fb.auth.currentUser?.isAnonymous
   }
 });
 
-async function getLastOpenedTimestamp(query) {
-  const queryStr = new URLSearchParams(query).toString();
-  const browsingHistory = await fb.usersBrowsingHistory()?.doc(queryStr).get();
-  const timestamp = browsingHistory?.data()?.lastOpened ?? 0;
-  return timestamp;
+function getBrowsingHistoryId(searchParams) {
+  return `${searchParams.country ?? ""}-${searchParams.region ?? ""}-${searchParams.city ?? ""}-${
+    searchParams.neighborhood ?? ""
+  }-${searchParams.propertyType ?? ""}-${searchParams.activeFilter ?? ""}`;
 }
 
 async function fetchLocationSearchData(path, params) {
-  Object.keys(params).forEach(
-    (key) => params[key] == null && delete params[key]
-  );
+  Object.keys(params).forEach((key) => params[key] == null && delete params[key]);
   const paramsStr = new URLSearchParams(params).toString();
   const response = await axios.get(path + "?" + paramsStr);
   return Object.values(response.data.results).map(function (item) {
@@ -317,12 +333,8 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
     }
 
     let rawPrices = item["price"];
-    let currentPriceStr = rawPrices
-      ? `${rawPrices["current"]} ${rawPrices["currency"]}`
-      : "";
-    let discountPrice = rawPrices
-      ? rawPrices["max"] - rawPrices["current"]
-      : null;
+    let currentPriceStr = rawPrices ? `${rawPrices["current"]} ${rawPrices["currency"]}` : "";
+    let discountPrice = rawPrices ? rawPrices["max"] - rawPrices["current"] : null;
     let discountPriceStr = discountPrice
       ? `(-${Math.round((discountPrice / rawPrices["max"]) * 1000) / 10}%)`
       : "";
@@ -348,9 +360,7 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
       : null;
 
     let rawEvents = item["events"];
-    let publishedDate = rawEvents
-      ? rawEvents["visibility"]["0"]["date"]
-      : null;
+    let publishedDate = rawEvents ? rawEvents["visibility"]["0"]["date"] : null;
     let updates =
       rawEvents && rawEvents["dataUpdates"]
         ? rawEvents["dataUpdates"].map(function (update) {
@@ -366,16 +376,12 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
     let rawSpace = item["space"];
     let roomFullStr = rawSpace?.room?.full || "";
     let roomsStr = rawSpace?.room
-      ? `${rawSpace?.room?.min || ""}/${
-          rawSpace?.room?.max || ""
-        }/${roomFullStr}`
+      ? `${rawSpace?.room?.min || ""}/${rawSpace?.room?.max || ""}/${roomFullStr}`
       : null;
     let spaceStr = rawSpace?.usable ? `${rawSpace["usable"]["min"]}m2` : null;
     let landStr = rawSpace?.land ? `${rawSpace["land"]["min"]}m2` : null;
 
-    let rawCoordinates = item["geography"]
-      ? item["geography"]["coordinates"][0]
-      : null;
+    let rawCoordinates = item["geography"] ? item["geography"]["coordinates"][0] : null;
     let coordinates = rawCoordinates
       ? {
           lat: parseFloat(rawCoordinates.split(",")[0]),
@@ -414,7 +420,7 @@ function parseRawOffers(offersList, offersHistory, lastOpenedTimestamp) {
       marker: marker,
       address: address,
       urls: urls,
-      allUrls: allUrls,
+      allUrls: allUrls
     };
 
     if (offer.favorite) {

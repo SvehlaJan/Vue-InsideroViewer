@@ -15,8 +15,8 @@
             class="py-1 px-2"
             variant="outline-primary"
             :pressed="
-              state.value === $route.query.active ||
-              ($route.query.type == null && state.value === 'all')
+              state.value === activeFilter ||
+              (activeFilter == null && state.value === 'all')
             "
             @click="setState(state)"
           >
@@ -31,8 +31,8 @@
             class="py-1 px-2"
             variant="outline-primary"
             :pressed="
-              category.value === $route.query.type ||
-              ($route.query.type == null && category.value === 'all')
+              category.value === propertyType ||
+              (propertyType == null && category.value === 'all')
             "
             @click="setCategory(category)"
           >
@@ -97,7 +97,7 @@
 </template>
 
 <script>
-import { mapGetters, mapState } from "vuex";
+import { mapGetters } from "vuex";
 import _ from "lodash";
 
 export default {
@@ -114,7 +114,7 @@ export default {
         { text: "Inactive", value: "false" },
         { text: "All", value: "all" }
       ],
-      spaceMin: this.$store.state.spaceMin
+      spaceMin: this.$store.getters.spaceMin
     };
   },
   computed: {
@@ -122,8 +122,10 @@ export default {
       "savedLocationsArray",
       "hasSavedLocations",
       "isAuthenticated",
-      "isAnonymousUser"
-    ]),
+      "isAnonymousUser",
+      "activeFilter",
+      "propertyType"
+    ])
   },
   watch: {
     spaceMin: function (val, oldVal) {
@@ -132,47 +134,56 @@ export default {
   },
   methods: {
     setSpaceMinDebounced: _.debounce(async function (spaceMin) {
-      await this.$store.dispatch("setSpaceMin", spaceMin);
+      await this.$store.dispatch("setSearchParams", { spaceMin: spaceMin });
     }, 500),
+    async setLocation(location) {
+      // let newQuery = { ...this.$route.query };
+      // newQuery.country = location.country.value;
+      // newQuery.region = location.region.value;
+      // newQuery.city = location.city.value;
+      // newQuery.neighborhood = location.neighborhood?.value;
+      // this.$router.push({ path: "/offers", query: newQuery });
+      await this.$store.dispatch("setSearchParams", {
+        country: location.country.value,
+        region: location.region.value,
+        city: location.city.value,
+        neighborhood: location.neighborhood?.value
+      });
+    },
+    async setCategory(category) {
+      // let newQuery = { ...this.$route.query };
+      // newQuery.type = category.value;
+      // this.$router.push({ path: "/offers", query: newQuery });
+      await this.$store.dispatch("setSearchParams", {
+        propertyType: category.value
+      });
+    },
+    async setState(activeFilter) {
+      // let newQuery = { ...this.$route.query };
+      // newQuery.activeFilter = activeFilter.value;
+      // this.$router.push({ path: "/offers", query: newQuery });
+      await this.$store.dispatch("setSearchParams", {
+        activeFilter: activeFilter.value
+      });
+    },
     logout() {
       this.$store.dispatch("logout");
     },
-    setLocation(location) {
-      let newQuery = { ...this.$route.query };
-      newQuery.country = location.country.value;
-      newQuery.region = location.region.value;
-      newQuery.city = location.city.value;
-      newQuery.neighborhood = location.neighborhood?.value;
-      this.$router.push({ path: "/offers", query: newQuery });
-    },
-    async setCategory(category) {
-      await this.$store.dispatch("setPropertyType", category.value);
-      
-      let newQuery = { ...this.$route.query };
-      newQuery.type = category.value;
-      this.$router.push({ path: "/offers", query: newQuery });
-    },
-    setState(active) {
-      let newQuery = { ...this.$route.query };
-      newQuery.active = active.value;
-      this.$router.push({ path: "/offers", query: newQuery });
-    },
     isLocationActive(location) {
       let match = true;
-      let queryLocation = this.$route.query;
-      if (queryLocation.country || location.country) {
-        match = match && location.country?.value == this.$route.query.country;
+      const searchParams = this.$store.getters.searchParams;
+      if (searchParams.country || location.country) {
+        match = match && location.country?.value == searchParams.country;
       }
-      if (queryLocation.region || location.region) {
-        match = match && location.region?.value == this.$route.query.region;
+      if (searchParams.region || location.region) {
+        match = match && location.region?.value == searchParams.region;
       }
-      if (queryLocation.city || location.city) {
-        match = match && location.city?.value == this.$route.query.city;
+      if (searchParams.city || location.city) {
+        match = match && location.city?.value == searchParams.city;
       }
-      if (queryLocation.neighborhood || location.neighborhood) {
+      if (searchParams.neighborhood || location.neighborhood) {
         match =
-          match &&
-          location.neighborhood?.value == this.$route.query.neighborhood;
+          match && location.neighborhood?.value == searchParams.neighborhood;
       }
       return match;
     },
